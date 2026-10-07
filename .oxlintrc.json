@@ -1,0 +1,42 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "vue"],
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "typescript/no-unused-vars": "error",
+    "no-var": "error",
+    "prefer-const": "error"
+  },
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/coverage/**",
+    "**/.turbo/**",
+    "**/*.tsbuildinfo",
+    "docs/**",
+    "AGENTS.md"
+  ],
+  "overrides": [
+    {
+      "files": ["**/*.mjs"],
+      "rules": {
+        "no-undef": "error"
+      }
+    },
+    {
+      "files": ["**/*.mjs", "apps/api/**/*.ts", "apps/web/vite.config.mts"],
+      "env": {
+        "node": true
+      }
+    },
+    {
+      "files": ["apps/web/src/**/*.{ts,vue}"],
+      "env": {
+        "browser": true
+      }
+    }
+  ]
+}

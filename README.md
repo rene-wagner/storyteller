@@ -18,8 +18,9 @@ pnpm validate
 ```
 
 Keep `pnpm-lock.yaml` with repository changes for reproducible installs. Dependencies
-are pinned; TypeScript 5.9 is used for compatibility with Vue's checker and the
-TypeScript ESLint tooling.
+are pinned; TypeScript 5.9 is used for compatibility with Vue's checker.
+Oxlint 1.87.0 handles linting and Oxfmt 0.72.0 handles formatting, both with
+native Android arm64 support.
 
 ## Commands
 
@@ -27,7 +28,7 @@ TypeScript ESLint tooling.
 | ------------------- | ----------------------------------------------------------------------------------- |
 | `pnpm dev`          | Run the API compiler watcher and the Vite frontend development server through Turbo |
 | `pnpm build`        | Compile the API probe and typecheck/bundle the Vue frontend probe through Turbo     |
-| `pnpm lint`         | Lint both apps through Turbo, then root tooling/tests; check formatting             |
+| `pnpm lint`         | Run Oxlint for both apps through Turbo, then root tests; check Oxfmt formatting     |
 | `pnpm typecheck`    | Check both apps through Turbo, including Vue single-file components                 |
 | `pnpm test`         | Run repository-configuration tests using Node's built-in test runner                |
 | `pnpm format:check` | Check formatting without changing files                                             |
@@ -44,10 +45,11 @@ TypeScript ESLint tooling.
   are implemented yet.
 - `packages/config`: shared strict TypeScript base, Node and Vue configurations,
   consumed through workspace dependencies by both apps.
-- `eslint.config.mjs` and `.prettierrc.json`: common code-quality settings.
+- `.oxlintrc.json` and `.oxfmtrc.json`: common Oxlint and Oxfmt settings.
 - `tests/repository.test.mjs`: workspace/task wiring, effective compiler settings
   (including rejected invalid types and isolated Node/browser globals), Vue/TS
-  lint rules, ignore-policy checks and Vite development/build smoke tests.
+  script lint rules, formatting/ignore-policy checks and Vite development/build
+  smoke tests.
 
 Vite is used where browser bundling is needed. The Node API retains `tsc`, and
 `packages/config` distributes JSON configuration directly without a build step.
@@ -69,6 +71,25 @@ features or dependencies for later roadmap phases. Compiler output (`dist`),
 Turbo cache, dependencies, coverage and TypeScript build information are ignored.
 `AGENTS.md` and `docs/` are excluded from automatic formatting.
 
+## Code quality
+
+Oxlint uses its correctness rules with the native TypeScript and Vue plugins.
+Explicit `any`, unused variables, `var` and avoidable `let` declarations are
+rejected. Both apps and the root tests use the shared configuration; lint warnings
+also fail validation. `pnpm lint:root` checks the root tests independently of Turbo.
+Type checking remains a separate step using `tsc` and `vue-tsc`; type-aware Oxlint
+rules are not enabled.
+
+Oxlint checks Vue `<script>` and `<script setup>` blocks, but does not currently
+lint Vue templates. It is not a one-to-one replacement for the former Vue
+recommended lint rules. `vue-tsc` continues to check template types, and Oxfmt
+formats entire Vue single-file components.
+
+Oxfmt retains the existing style: semicolons, double quotes, trailing commas and
+an 80-character print width. Package-key sorting is disabled to avoid unrelated
+reordering. Generated files, the lockfile and user-owned documentation retain
+their formatting exclusions.
+
 ## Termux / Android validation
 
 The JavaScript tooling was checked on Node.js 26.3.1 and PNPM 12.10.1 on Android
@@ -81,7 +102,7 @@ Run each command separately from the repository root and check its exit status:
 
 ```sh
 pnpm -r lint
-pnpm exec eslint eslint.config.mjs tests
+pnpm lint:root
 pnpm format:check
 pnpm -r typecheck
 pnpm test

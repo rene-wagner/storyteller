@@ -6,7 +6,7 @@
     "dev": "tsc --watch",
     "build": "tsc --noEmit false",
     "typecheck": "tsc",
-    "lint": "eslint src"
+    "lint": "oxlint --deny-warnings src"
   },
   "devDependencies": {
     "@storyteller/config": "workspace:*",

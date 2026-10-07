@@ -130,9 +130,13 @@ Type checking
 
 pnpm typecheck
 
-Linting
+Linting (Oxlint) and formatting checks (Oxfmt)
 
 pnpm lint
+
+Format source and configuration files
+
+pnpm format
 
 Full validation
 
@@ -143,7 +147,7 @@ pnpm validate
 Under Termux, agents MUST run each validation step separately from the repository root, without Turbo:
 
 pnpm -r lint
-pnpm exec eslint eslint.config.mjs tests
+pnpm lint:root
 pnpm format:check
 pnpm -r typecheck
 pnpm test

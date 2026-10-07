@@ -125,8 +125,8 @@ Create common linting and formatting rules.
 
 Tasks
 
-- Configure ESLint.
-- Configure formatting rules.
+- Configure Oxlint for JavaScript, TypeScript and Vue script blocks (Vue template linting is not currently supported).
+- Configure Oxfmt formatting rules.
 - Add scripts for linting.
 - Add ignore rules for generated files.
 - Apply the configuration to frontend and backend code.

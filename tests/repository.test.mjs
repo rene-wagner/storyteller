@@ -1,17 +1,50 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { createRequire } from "node:module";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { ESLint } from "eslint";
-import * as prettier from "prettier";
 import ts from "typescript";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const readJson = (file) =>
   JSON.parse(readFileSync(path.join(root, file), "utf8"));
-const eslint = new ESLint({ cwd: root });
+function runTool(tool, args, cwd = root) {
+  const result = spawnSync(
+    process.execPath,
+    [path.join(root, "node_modules", tool, "bin", tool), ...args],
+    { cwd, encoding: "utf8" },
+  );
+  assert.ifError(result.error);
+  assert.equal(result.signal, null);
+  return result;
+}
+
+function probeWorkspace(t) {
+  const cwd = mkdtempSync(path.join(tmpdir(), "storyteller-quality-"));
+  t.after(() => rmSync(cwd, { recursive: true, force: true }));
+  for (const config of [".oxlintrc.json", ".oxfmtrc.json"]) {
+    copyFileSync(path.join(root, config), path.join(cwd, config));
+  }
+  return {
+    cwd,
+    write(file, source) {
+      const target = path.join(cwd, file);
+      mkdirSync(path.dirname(target), { recursive: true });
+      writeFileSync(target, source);
+    },
+  };
+}
 
 function appConfig(app) {
   const config = ts.getParsedCommandLineOfConfigFile(
@@ -72,7 +105,9 @@ test("workspace packages and root commands form a private monorepo", () => {
     );
     assert.equal(
       appPackage.scripts.lint,
-      app === "web" ? "eslint src vite.config.mts" : "eslint src",
+      app === "web"
+        ? "oxlint --deny-warnings src vite.config.mts"
+        : "oxlint --deny-warnings src",
     );
     assert.equal(
       appPackage.scripts.typecheck,
@@ -135,8 +170,8 @@ test("Turbo tracks generated output and shared configuration", () => {
   assert.equal(turbo.tasks.dev.cache, false);
   for (const file of [
     "packages/config/**",
-    "eslint.config.mjs",
-    ".prettierrc.json",
+    ".oxlintrc.json",
+    ".oxfmtrc.json",
   ]) {
     assert.ok(turbo.globalDependencies.includes(file));
   }
@@ -189,7 +224,8 @@ test("Vue config allows browser globals but excludes Node globals", () => {
   );
 });
 
-test("ESLint applies TypeScript rules to backend and Vue script setup", async () => {
+test("Oxlint applies TypeScript rules to backend and Vue script setup", (t) => {
+  const workspace = probeWorkspace(t);
   const sources = [
     ["apps/api/src/probe.ts", "export const probe: any = 1;"],
     [
@@ -198,29 +234,125 @@ test("ESLint applies TypeScript rules to backend and Vue script setup", async ()
     ],
   ];
   for (const [filePath, source] of sources) {
-    const [result] = await eslint.lintText(source, { filePath });
-    assert.ok(
-      result.messages.some(
-        (message) => message.ruleId === "@typescript-eslint/no-explicit-any",
-      ),
+    workspace.write(filePath, source);
+    const result = runTool(
+      "oxlint",
+      ["--format=json", filePath],
+      workspace.cwd,
     );
-    assert.equal(result.fatalErrorCount, 0);
+    assert.equal(result.status, 1);
+    const diagnostics = JSON.parse(result.stdout).diagnostics;
+    assert.ok(
+      diagnostics.some((diagnostic) => /no-explicit-any/.test(diagnostic.code)),
+      result.stdout,
+    );
+    assert.ok(
+      diagnostics.every((diagnostic) => !/parse/.test(diagnostic.code)),
+    );
+    workspace.write(filePath, source.replace(": any", ": number"));
+    assert.equal(runTool("oxlint", [filePath], workspace.cwd).status, 0);
   }
 });
 
-test("lint and formatting ignore generated files and user-owned docs", async () => {
+test("Oxlint rejects unused variables and unknown Node globals", (t) => {
+  const workspace = probeWorkspace(t);
+  for (const [file, source, rule] of [
+    ["apps/api/src/probe.ts", "const unused = 1;", "no-unused-vars"],
+    ["tests/probe.mjs", "console.log(unknownGlobal);", "no-undef"],
+  ]) {
+    workspace.write(file, source);
+    const result = runTool("oxlint", ["--format=json", file], workspace.cwd);
+    assert.equal(result.status, 1);
+    assert.ok(
+      JSON.parse(result.stdout).diagnostics.some((diagnostic) =>
+        diagnostic.code.includes(rule),
+      ),
+    );
+  }
+  workspace.write("tests/probe.mjs", "console.log(process.version);");
+  assert.equal(runTool("oxlint", ["tests/probe.mjs"], workspace.cwd).status, 0);
+});
+
+test("Oxlint rejects invalid Vue script setup exports", (t) => {
+  const workspace = probeWorkspace(t);
+  const file = "apps/web/src/Probe.vue";
+  workspace.write(
+    file,
+    '<script setup lang="ts">export const probe = 1;</script>',
+  );
+  const result = runTool("oxlint", ["--format=json", file], workspace.cwd);
+  assert.equal(result.status, 1);
+  assert.ok(
+    JSON.parse(result.stdout).diagnostics.some((diagnostic) =>
+      /no-export-in-script-setup/.test(diagnostic.code),
+    ),
+  );
+});
+
+test("lint and formatting ignore generated files and user-owned docs", (t) => {
+  const workspace = probeWorkspace(t);
   for (const file of [
     "apps/api/dist/probe.js",
     "apps/web/coverage/probe.js",
-    ".turbo/probe.json",
+    ".turbo/probe.js",
     "node_modules/probe/index.js",
-    "docs/development/ROADMAP.md",
+    "docs/probe.js",
     "AGENTS.md",
+    "apps/api/probe.tsbuildinfo",
+    "pnpm-lock.yaml",
   ]) {
-    assert.equal(await eslint.isPathIgnored(path.join(root, file)), true, file);
-    const info = await prettier.getFileInfo(path.join(root, file), {
-      ignorePath: path.join(root, ".prettierignore"),
-    });
-    assert.equal(info.ignored, true, file);
+    const source = "const unused:any=1";
+    workspace.write(file, source);
+    for (const [tool, args] of [
+      ["oxlint", ["--no-error-on-unmatched-pattern", file]],
+      ["oxfmt", ["--write", "--no-error-on-unmatched-pattern", file]],
+    ]) {
+      const result = runTool(tool, args, workspace.cwd);
+      assert.equal(result.status, 0, `${tool}: ${file}: ${result.stderr}`);
+    }
+    assert.equal(readFileSync(path.join(workspace.cwd, file), "utf8"), source);
+  }
+});
+
+test("Oxfmt enforces the shared style for TypeScript and Vue", (t) => {
+  const workspace = probeWorkspace(t);
+  for (const [file, source] of [
+    ["apps/api/src/probe.ts", "export const probe='value'"],
+    [
+      "apps/web/src/Probe.vue",
+      "<script setup lang='ts'>const probe='value'</script><template><span>{{probe}}</span></template>",
+    ],
+  ]) {
+    workspace.write(file, source);
+    assert.equal(runTool("oxfmt", ["--check", file], workspace.cwd).status, 1);
+    assert.equal(runTool("oxfmt", ["--write", file], workspace.cwd).status, 0);
+    assert.match(
+      readFileSync(path.join(workspace.cwd, file), "utf8"),
+      /probe = "value";/,
+    );
+    assert.equal(runTool("oxfmt", ["--check", file], workspace.cwd).status, 0);
+  }
+});
+
+test("quality scripts use only Oxlint and Oxfmt", () => {
+  const pkg = readJson("package.json");
+  assert.equal(
+    pkg.scripts.lint,
+    "turbo run lint && pnpm lint:root && pnpm format:check",
+  );
+  assert.equal(pkg.scripts["lint:root"], "oxlint --deny-warnings tests");
+  assert.equal(pkg.scripts.format, "oxfmt --write .");
+  assert.equal(pkg.scripts["format:check"], "oxfmt --check .");
+  assert.ok(pkg.devDependencies.oxlint);
+  assert.ok(pkg.devDependencies.oxfmt);
+  for (const dependency of Object.keys(pkg.devDependencies)) {
+    assert.doesNotMatch(dependency, /eslint|prettier/);
+  }
+  for (const file of [
+    "eslint.config.mjs",
+    ".prettierrc.json",
+    ".prettierignore",
+  ]) {
+    assert.equal(existsSync(path.join(root, file)), false);
   }
 });

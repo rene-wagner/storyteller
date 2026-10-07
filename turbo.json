@@ -18,7 +18,7 @@
   },
   "globalDependencies": [
     "packages/config/**",
-    "eslint.config.mjs",
-    ".prettierrc.json"
+    ".oxlintrc.json",
+    ".oxfmtrc.json"
   ]
 }

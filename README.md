@@ -23,28 +23,46 @@ TypeScript ESLint tooling.
 
 ## Commands
 
-| Command             | Purpose                                                                                                |
-| ------------------- | ------------------------------------------------------------------------------------------------------ |
-| `pnpm dev`          | Run both compiler watchers through Turbo; no HTTP server or UI dev server yet                          |
-| `pnpm build`        | Compile the API probe to JavaScript and emit the web probe's TypeScript/Vue declarations through Turbo |
-| `pnpm lint`         | Lint both apps through Turbo, then root tooling/tests; check formatting                                |
-| `pnpm typecheck`    | Check both apps through Turbo, including Vue single-file components                                    |
-| `pnpm test`         | Run repository-configuration tests using Node's built-in test runner                                   |
-| `pnpm format:check` | Check formatting without changing files                                                                |
-| `pnpm format`       | Format owned source and configuration files                                                            |
-| `pnpm validate`     | Run lint, typecheck, tests and build in that order; stop on failure                                    |
+| Command             | Purpose                                                                             |
+| ------------------- | ----------------------------------------------------------------------------------- |
+| `pnpm dev`          | Run the API compiler watcher and the Vite frontend development server through Turbo |
+| `pnpm build`        | Compile the API probe and typecheck/bundle the Vue frontend probe through Turbo     |
+| `pnpm lint`         | Lint both apps through Turbo, then root tooling/tests; check formatting             |
+| `pnpm typecheck`    | Check both apps through Turbo, including Vue single-file components                 |
+| `pnpm test`         | Run repository-configuration tests using Node's built-in test runner                |
+| `pnpm format:check` | Check formatting without changing files                                             |
+| `pnpm format`       | Format owned source and configuration files                                         |
+| `pnpm validate`     | Run lint, typecheck, tests and build in that order; stop on failure                 |
 
 ## Structure and scope
 
 - `apps/api`: a Node TypeScript compiler probe, not a Fastify application.
-- `apps/web`: TypeScript and Vue `<script setup>` compiler probes, not a runnable
-  frontend. Its build emits declarations only; it does not bundle a website.
+- `apps/web`: a minimal runnable Vue `<script setup>` tooling probe using Vite 8
+  and `@vitejs/plugin-vue`. Vite serves the probe in development and bundles HTML
+  and JavaScript to `dist` for production. Type checking remains separate and
+  also checks the Node-side Vite configuration; no application shell or features
+  are implemented yet.
 - `packages/config`: shared strict TypeScript base, Node and Vue configurations,
   consumed through workspace dependencies by both apps.
 - `eslint.config.mjs` and `.prettierrc.json`: common code-quality settings.
 - `tests/repository.test.mjs`: workspace/task wiring, effective compiler settings
   (including rejected invalid types and isolated Node/browser globals), Vue/TS
-  lint rules and ignore-policy checks.
+  lint rules, ignore-policy checks and Vite development/build smoke tests.
+
+Vite is used where browser bundling is needed. The Node API retains `tsc`, and
+`packages/config` distributes JSON configuration directly without a build step.
+Future shared packages should use Vite library mode only if they need bundled
+output, not simply because they belong to the workspace.
+
+Run the frontend independently (also under Termux):
+
+```sh
+pnpm --filter @storyteller/web dev
+pnpm --filter @storyteller/web build
+```
+
+Open the local URL printed by Vite (normally `http://localhost:5173`). The page
+only displays the existing `web` tooling marker.
 
 There are no routes, environment validation, database connections, domain/UI
 features or dependencies for later roadmap phases. Compiler output (`dist`),

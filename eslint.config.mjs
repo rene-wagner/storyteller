@@ -19,7 +19,7 @@ export default defineConfig([
   tseslint.configs.recommended,
   vue.configs["flat/recommended"],
   {
-    files: ["**/*.mjs", "apps/api/**/*.ts"],
+    files: ["**/*.mjs", "apps/api/**/*.ts", "apps/web/vite.config.mts"],
     languageOptions: { globals: globals.node },
   },
   {

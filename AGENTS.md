@@ -52,6 +52,7 @@ Monorepo
 Frontend
 
 - Vue 3
+- Vite (development server and production bundler)
 - Composition API
 - Vue Router
 - Pinia
@@ -219,6 +220,8 @@ Pages SHOULD orchestrate data and user interaction.
 Reusable presentational behavior SHOULD remain in components where practical.
 
 Do not introduce animations unless the task explicitly requires them.
+
+Use Vite for the frontend development server and production build. Keep type checking separate from bundling. Use Vite library mode for shared packages only when they need bundled distributable code; configuration-only packages do not need a bundler. The Node.js API may continue to use the TypeScript compiler without Vite.
 
 Use Tailwind CSS 4 for application styling.
 

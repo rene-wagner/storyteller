@@ -1,0 +1,4 @@
+{
+  "extends": "@storyteller/config/tsconfig/node",
+  "include": ["vite.config.mts"]
+}

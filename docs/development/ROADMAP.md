@@ -28,6 +28,7 @@ Monorepo
 Frontend
 
 - Vue 3
+- Vite
 - Composition API
 - TypeScript
 - Pinia
@@ -101,6 +102,8 @@ Tasks
 - Add base TypeScript settings.
 - Configure Node.js settings for the backend.
 - Configure Vue settings for the frontend.
+- Use Vite with the Vue plugin for frontend development and production bundling; retain separate type checking.
+- Keep the Node.js API on the TypeScript compiler and configuration-only packages unbundled. Use Vite library mode only for packages that need bundled distributable code.
 - Make "apps/web" and "apps/api" use the shared configuration.
 
 Result
@@ -866,7 +869,7 @@ Tasks
 - Initialize Vue 3.
 - Use TypeScript.
 - Use Composition API.
-- Configure the development server.
+- Extend the existing Vite development server and Vue tooling probe.
 - Add the base application shell.
 
 Definition of Done
@@ -880,7 +883,7 @@ TASK-035 — Configure Tailwind CSS 4
 Tasks
 
 - Install Tailwind CSS 4.
-- Configure the frontend build.
+- Integrate Tailwind with the Vite frontend build.
 - Create base design tokens.
 - Use:
   - black;
@@ -1776,6 +1779,7 @@ Monorepo:
 
 Frontend:
 - Vue 3
+- Vite
 - Composition API
 - TypeScript
 - Pinia

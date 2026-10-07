@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { ESLint } from "eslint";
 import * as prettier from "prettier";
 import ts from "typescript";
@@ -69,12 +70,62 @@ test("workspace packages and root commands form a private monorepo", () => {
       appPackage.devDependencies["@storyteller/config"],
       "workspace:*",
     );
-    assert.equal(appPackage.scripts.lint, "eslint src");
+    assert.equal(
+      appPackage.scripts.lint,
+      app === "web" ? "eslint src vite.config.mts" : "eslint src",
+    );
     assert.equal(
       appPackage.scripts.typecheck,
-      app === "web" ? "vue-tsc" : "tsc",
+      app === "web" ? "vue-tsc && tsc -p tsconfig.node.json" : "tsc",
     );
   }
+});
+
+test("Vite serves and bundles the Vue tooling probe", async () => {
+  const webRoot = path.join(root, "apps/web");
+  const pkg = readJson("apps/web/package.json");
+  assert.equal(pkg.scripts.dev, "vite");
+  assert.equal(pkg.scripts.build, "pnpm typecheck && vite build");
+  const require = createRequire(path.join(webRoot, "package.json"));
+  const { build, createServer } = await import(
+    pathToFileURL(require.resolve("vite")).href
+  );
+  const config = {
+    root: webRoot,
+    configFile: path.join(webRoot, "vite.config.mts"),
+    logLevel: "silent",
+  };
+  const server = await createServer({
+    ...config,
+    server: { host: "127.0.0.1", port: 0, strictPort: true },
+  });
+  try {
+    await server.listen();
+    const address = server.httpServer.address();
+    assert.ok(address && typeof address !== "string");
+    const origin = `http://127.0.0.1:${address.port}`;
+    const html = await fetch(origin);
+    assert.equal(html.status, 200);
+    assert.match(await html.text(), /\/src\/main\.ts/);
+    const main = await fetch(`${origin}/src/main.ts`);
+    assert.equal(main.status, 200);
+    assert.match(await main.text(), /ToolingCheck\.vue/);
+    const component = await fetch(`${origin}/src/ToolingCheck.vue`);
+    assert.equal(component.status, 200);
+    const componentCode = await component.text();
+    assert.match(componentCode, /toolingCheck/);
+    assert.match(componentCode, /render/);
+  } finally {
+    await server.close();
+  }
+  const result = await build({ ...config, build: { write: false } });
+  assert.ok(!Array.isArray(result) && "output" in result);
+  assert.ok(result.output.some((file) => file.fileName === "index.html"));
+  assert.ok(
+    result.output.some(
+      (file) => file.type === "chunk" && file.isEntry && /web/.test(file.code),
+    ),
+  );
 });
 
 test("Turbo tracks generated output and shared configuration", () => {

@@ -1,0 +1,16 @@
+{
+  "name": "@storyteller/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc --noEmit false",
+    "typecheck": "tsc",
+    "lint": "eslint src"
+  },
+  "devDependencies": {
+    "@storyteller/config": "workspace:*",
+    "@types/node": "24.19.1",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@storyteller/web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vue-tsc --watch",
+    "build": "vue-tsc --noEmit false --declaration --emitDeclarationOnly",
+    "typecheck": "vue-tsc",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "vue": "3.5.43"
+  },
+  "devDependencies": {
+    "@storyteller/config": "workspace:*",
+    "typescript": "5.9.3",
+    "vue-tsc": "3.3.12"
+  }
+}

@@ -1,0 +1,9 @@
+**/node_modules/**
+**/dist/**
+**/coverage/**
+**/.turbo/**
+**/*.tsbuildinfo
+pnpm-lock.yaml
+# Existing user-owned instructions and roadmap are not reformatted.
+AGENTS.md
+docs/

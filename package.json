@@ -8,10 +8,10 @@
     "pnpm": ">=12 <13"
   },
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "lint": "turbo run lint && pnpm lint:root && pnpm format:check",
-    "typecheck": "turbo run typecheck",
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint && pnpm lint:root && pnpm format:check",
+    "typecheck": "pnpm -r typecheck",
     "test": "node --test tests/*.test.mjs",
     "validate": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "lint:root": "oxlint --deny-warnings tests",
@@ -21,7 +21,6 @@
   "devDependencies": {
     "oxfmt": "0.72.0",
     "oxlint": "1.87.0",
-    "turbo": "2.11.7",
     "typescript": "5.9.3"
   }
 }

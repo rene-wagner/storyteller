@@ -23,7 +23,6 @@ The implementation shall use:
 Monorepo
 
 - PNPM
-- Turbo
 
 Frontend
 
@@ -58,7 +57,7 @@ Create the basic repository structure.
 Tasks
 
 - Initialize a PNPM workspace.
-- Configure Turbo.
+- Use recursive PNPM scripts for workspace tasks in dependency order; run development watchers in parallel.
 - Create these directories:
 
 apps/
@@ -69,7 +68,6 @@ packages/
 
 - Add the root "package.json".
 - Add "pnpm-workspace.yaml".
-- Add "turbo.json".
 - Add root scripts for:
   - development;
   - build;
@@ -79,13 +77,13 @@ packages/
 
 Result
 
-The monorepo can install dependencies and run Turbo commands.
+The monorepo can install dependencies and run recursive PNPM commands.
 
 Definition of Done
 
 - "pnpm install" completes successfully.
-- "pnpm build" can execute through Turbo.
-- "pnpm typecheck" can execute through Turbo.
+- "pnpm build" executes through "pnpm -r build".
+- "pnpm typecheck" executes through "pnpm -r typecheck".
 - No application features are required.
 
 ---
@@ -1775,7 +1773,6 @@ Technical stack:
 
 Monorepo:
 - PNPM
-- Turbo
 
 Frontend:
 - Vue 3

@@ -46,7 +46,6 @@ Technology Stack
 Monorepo
 
 - PNPM
-- Turbo
 - TypeScript
 
 Frontend
@@ -142,20 +141,7 @@ Full validation
 
 pnpm validate
 
-"pnpm validate" is the final repository-level validation command on platforms supported by Turbo.
-
-Under Termux, agents MUST run each validation step separately from the repository root, without Turbo:
-
-pnpm -r lint
-pnpm lint:root
-pnpm format:check
-pnpm -r typecheck
-pnpm test
-pnpm -r build
-
-Run every command individually and record its result. All commands MUST exit successfully for validation to pass. This sequence counts as successful final repository-level validation under Termux and satisfies the validation requirement in the Definition of Done; running "pnpm validate" or obtaining an additional run on another device is not required.
-
-Keep this sequence aligned with the checks in the root validation scripts when they change. It does not verify Turbo orchestration or caching. Outside Termux, continue to use "pnpm validate".
+"pnpm validate" is the final repository-level validation command on all supported platforms, including Termux. Root workspace scripts use recursive PNPM execution in dependency order; development watchers run in parallel.
 
 It SHOULD execute the relevant CI-level checks, including at least:
 
@@ -479,9 +465,7 @@ pnpm --filter <package> test
 
 Then run broader validation as appropriate.
 
-Before task completion, run "pnpm validate", or, under Termux, every individual command in the Development Commands validation sequence.
-
-The Termux sequence is an accepted validation path, not skipped validation. If any required check fails or cannot run, validation is not successful; report:
+Before task completion, run "pnpm validate". If any required check fails or cannot run, validation is not successful; report:
 
 - which checks failed or could not run;
 - why;
@@ -638,7 +622,7 @@ A task is complete only when all applicable conditions are true:
 - no unrelated changes are included;
 - the final diff was reviewed.
 
-The default final repository check is "pnpm validate". Under Termux, successful execution of every individual validation step listed in Development Commands is equivalent for task completion.
+The final repository check is "pnpm validate", including under Termux.
 
 Do not mark a task complete when known failures caused by the task remain.
 
@@ -674,7 +658,7 @@ Tests:      PASS | FAIL | NOT RUN
 Build:      PASS | FAIL | NOT RUN
 Validate:   PASS | FAIL | NOT RUN
 
-Under Termux, report "Validate: PASS" only when every required individual validation command passed, and state "Termux: individual checks without Turbo". List the commands actually executed; do not claim that "pnpm validate" itself ran or that Turbo was verified.
+Report "Validate: PASS" only when "pnpm validate" passed. List the commands actually executed.
 
 Add relevant details for failed or skipped checks.
 

@@ -7,8 +7,7 @@ Repository foundation for an audio drama application. Only Phase 1
 
 - Node.js 24 or newer
 - PNPM 12 (the exact development version is recorded in `packageManager`)
-- For Turbo-backed commands: Linux, macOS or Windows
-- Under Termux: use the individual validation steps below instead of Turbo
+- Supported environments include Termux / Android arm64
 
 From the repository root:
 
@@ -24,16 +23,16 @@ native Android arm64 support.
 
 ## Commands
 
-| Command             | Purpose                                                                             |
-| ------------------- | ----------------------------------------------------------------------------------- |
-| `pnpm dev`          | Run the API compiler watcher and the Vite frontend development server through Turbo |
-| `pnpm build`        | Compile the API probe and typecheck/bundle the Vue frontend probe through Turbo     |
-| `pnpm lint`         | Run Oxlint for both apps through Turbo, then root tests; check Oxfmt formatting     |
-| `pnpm typecheck`    | Check both apps through Turbo, including Vue single-file components                 |
-| `pnpm test`         | Run repository-configuration tests using Node's built-in test runner                |
-| `pnpm format:check` | Check formatting without changing files                                             |
-| `pnpm format`       | Format owned source and configuration files                                         |
-| `pnpm validate`     | Run lint, typecheck, tests and build in that order; stop on failure                 |
+| Command             | Purpose                                                                        |
+| ------------------- | ------------------------------------------------------------------------------ |
+| `pnpm dev`          | Run the API compiler watcher and Vite development server in parallel via PNPM  |
+| `pnpm build`        | Compile the API probe and typecheck/bundle the Vue frontend via recursive PNPM |
+| `pnpm lint`         | Lint both apps via recursive PNPM, then lint root tests and check formatting   |
+| `pnpm typecheck`    | Check both apps via recursive PNPM, including Vue single-file components       |
+| `pnpm test`         | Run repository-configuration tests using Node's built-in test runner           |
+| `pnpm format:check` | Check formatting without changing files                                        |
+| `pnpm format`       | Format owned source and configuration files                                    |
+| `pnpm validate`     | Run lint, typecheck, tests and build in that order; stop on failure            |
 
 ## Structure and scope
 
@@ -68,7 +67,7 @@ only displays the existing `web` tooling marker.
 
 There are no routes, environment validation, database connections, domain/UI
 features or dependencies for later roadmap phases. Compiler output (`dist`),
-Turbo cache, dependencies, coverage and TypeScript build information are ignored.
+dependencies, coverage and TypeScript build information are ignored.
 `AGENTS.md` and `docs/` are excluded from automatic formatting.
 
 ## Code quality
@@ -76,7 +75,8 @@ Turbo cache, dependencies, coverage and TypeScript build information are ignored
 Oxlint uses its correctness rules with the native TypeScript and Vue plugins.
 Explicit `any`, unused variables, `var` and avoidable `let` declarations are
 rejected. Both apps and the root tests use the shared configuration; lint warnings
-also fail validation. `pnpm lint:root` checks the root tests independently of Turbo.
+also fail validation. `pnpm lint:root` checks the root tests independently of
+workspace scripts.
 Type checking remains a separate step using `tsc` and `vue-tsc`; type-aware Oxlint
 rules are not enabled.
 
@@ -90,31 +90,15 @@ an 80-character print width. Package-key sorting is disabled to avoid unrelated
 reordering. Generated files, the lockfile and user-owned documentation retain
 their formatting exclusions.
 
-## Termux / Android validation
+## Workspace execution and Termux
+
+Root scripts use `pnpm -r` to run workspace tasks in dependency order. Packages
+without the requested script (such as `packages/config`) are skipped, and the
+workspace root is excluded to avoid recursion. Development uses
+`pnpm -r --parallel dev` so long-running watchers start together instead of
+waiting for another watcher to finish. No separate task runner or task cache is
+configured.
 
 The JavaScript tooling was checked on Node.js 26.3.1 and PNPM 12.10.1 on Android
-arm64. Installation succeeds, but Turbo 2.11.7 installs a Linux arm64 executable
-that Android cannot run (`unexpected e_type: 2`). Consequently, the root
-Turbo-backed commands, including `pnpm validate`, are environment-blocked here;
-use the accepted individual validation sequence instead.
-
-Run each command separately from the repository root and check its exit status:
-
-```sh
-pnpm -r lint
-pnpm lint:root
-pnpm format:check
-pnpm -r typecheck
-pnpm test
-pnpm -r build
-```
-
-If every command exits successfully, this counts as successful final validation
-under Termux and satisfies the repository's validation requirement. No additional
-`pnpm validate` attempt or run on another device is required. A failed or unavailable
-check still means validation has not passed.
-
-Report `Validate: PASS (Termux: individual checks without Turbo)` and list the
-commands executed. This validates the underlying checks, not Turbo orchestration
-or caching. Keep the sequence aligned with the root scripts when checks change;
-on supported platforms, continue to use `pnpm validate`.
+arm64. The same root commands, including `pnpm validate`, work under Termux;
+no platform-specific validation sequence is required.

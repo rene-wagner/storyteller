@@ -83,8 +83,9 @@ test("workspace packages and root commands form a private monorepo", () => {
   const pkg = readJson("package.json");
   assert.equal(pkg.private, true);
   assert.match(pkg.packageManager, /^pnpm@12\./);
-  for (const command of ["dev", "build", "lint", "typecheck"]) {
-    assert.match(pkg.scripts[command], new RegExp(`turbo run ${command}`));
+  assert.equal(pkg.scripts.dev, "pnpm -r --parallel dev");
+  for (const command of ["build", "typecheck"]) {
+    assert.equal(pkg.scripts[command], `pnpm -r ${command}`);
   }
   assert.equal(
     pkg.scripts.validate,
@@ -163,18 +164,12 @@ test("Vite serves and bundles the Vue tooling probe", async () => {
   );
 });
 
-test("Turbo tracks generated output and shared configuration", () => {
-  const turbo = readJson("turbo.json");
-  assert.deepEqual(turbo.tasks.build.outputs, ["dist/**"]);
-  assert.equal(turbo.tasks.dev.persistent, true);
-  assert.equal(turbo.tasks.dev.cache, false);
-  for (const file of [
-    "packages/config/**",
-    ".oxlintrc.json",
-    ".oxfmtrc.json",
-  ]) {
-    assert.ok(turbo.globalDependencies.includes(file));
-  }
+test("workspace orchestration needs no Turbo dependency or configuration", () => {
+  const pkg = readJson("package.json");
+  assert.equal(pkg.devDependencies.turbo, undefined);
+  assert.equal(existsSync(path.join(root, "turbo.json")), false);
+  const lockfile = readFileSync(path.join(root, "pnpm-lock.yaml"), "utf8");
+  assert.doesNotMatch(lockfile, /turbo/);
 });
 
 for (const app of ["api", "web"]) {
@@ -294,7 +289,6 @@ test("lint and formatting ignore generated files and user-owned docs", (t) => {
   for (const file of [
     "apps/api/dist/probe.js",
     "apps/web/coverage/probe.js",
-    ".turbo/probe.js",
     "node_modules/probe/index.js",
     "docs/probe.js",
     "AGENTS.md",
@@ -338,7 +332,7 @@ test("quality scripts use only Oxlint and Oxfmt", () => {
   const pkg = readJson("package.json");
   assert.equal(
     pkg.scripts.lint,
-    "turbo run lint && pnpm lint:root && pnpm format:check",
+    "pnpm -r lint && pnpm lint:root && pnpm format:check",
   );
   assert.equal(pkg.scripts["lint:root"], "oxlint --deny-warnings tests");
   assert.equal(pkg.scripts.format, "oxfmt --write .");

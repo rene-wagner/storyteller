@@ -3,20 +3,33 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import type {
   Character,
   CreateCharacterRequest,
+  CreateEpisodeRequest,
+  Episode,
   UpdateProjectRequest,
 } from "@storyteller/shared";
 import { computed, ref } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import { ApiError } from "../api-client";
 import CharacterForm from "../components/CharacterForm.vue";
+import EpisodeForm from "../components/EpisodeForm.vue";
 import ProjectForm from "../components/ProjectForm.vue";
+import Accordion from "../components/ui/Accordion.vue";
+import AccordionContent from "../components/ui/AccordionContent.vue";
+import AccordionHeader from "../components/ui/AccordionHeader.vue";
+import AccordionItem from "../components/ui/AccordionItem.vue";
 import BaseAlert from "../components/ui/BaseAlert.vue";
 import BaseButton from "../components/ui/BaseButton.vue";
 import ConfirmationDialog from "../components/ui/ConfirmationDialog.vue";
 import EmptyState from "../components/ui/EmptyState.vue";
 import ErrorState from "../components/ui/ErrorState.vue";
 import LoadingState from "../components/ui/LoadingState.vue";
-import { projectError, projectKeys, projectsApi } from "../projects";
+import {
+  episodesByPosition,
+  movedEpisodeIds,
+  projectError,
+  projectKeys,
+  projectsApi,
+} from "../projects";
 
 const route = useRoute();
 const router = useRouter();
@@ -36,6 +49,67 @@ const episodes = useQuery({
   queryFn: () => projectsApi.episodes(projectId.value),
   enabled: computed(() => project.isSuccess.value),
 });
+const orderedEpisodes = computed(() =>
+  episodesByPosition(episodes.data.value ?? []),
+);
+const addingEpisode = ref(false);
+const editingEpisode = ref<Episode | null>(null);
+const deletingEpisode = ref<Episode | null>(null);
+const confirmingEpisodeDelete = ref(false);
+const createEpisode = useMutation({
+  mutationFn: (input: CreateEpisodeRequest) =>
+    projectsApi.createEpisode(projectId.value, input),
+  onSuccess: async (saved) => {
+    await queryClient.invalidateQueries({
+      queryKey: projectKeys.episodes(saved.projectId),
+      exact: true,
+    });
+    addingEpisode.value = false;
+  },
+});
+const updateEpisode = useMutation({
+  mutationFn: ({ id, input }: { id: string; input: CreateEpisodeRequest }) =>
+    projectsApi.updateEpisode(id, input),
+  onSuccess: async (saved) => {
+    await queryClient.invalidateQueries({
+      queryKey: projectKeys.episodes(saved.projectId),
+      exact: true,
+    });
+    editingEpisode.value = null;
+  },
+});
+const removeEpisode = useMutation({
+  mutationFn: (id: string) => projectsApi.deleteEpisode(id),
+  onSuccess: async () => {
+    await queryClient.invalidateQueries({
+      queryKey: projectKeys.episodes(projectId.value),
+      exact: true,
+    });
+    deletingEpisode.value = null;
+  },
+});
+const reorderEpisodes = useMutation({
+  mutationFn: (episodeIds: string[]) =>
+    projectsApi.reorderEpisodes(projectId.value, { episodeIds }),
+  onSuccess: async () => {
+    await queryClient.invalidateQueries({
+      queryKey: projectKeys.episodes(projectId.value),
+      exact: true,
+    });
+  },
+});
+const episodeBusy = computed(
+  () =>
+    createEpisode.isPending.value ||
+    updateEpisode.isPending.value ||
+    removeEpisode.isPending.value ||
+    reorderEpisodes.isPending.value,
+);
+function moveEpisode(index: number, offset: -1 | 1): void {
+  if (episodeBusy.value) return;
+  const ids = movedEpisodeIds(orderedEpisodes.value, index, offset);
+  if (ids) reorderEpisodes.mutate(ids);
+}
 const editing = ref(false);
 const confirmingDelete = ref(false);
 const addingCharacter = ref(false);
@@ -351,6 +425,54 @@ const remove = useMutation({
       </section>
       <section aria-labelledby="episodes-heading" class="space-y-3">
         <h2 id="episodes-heading" class="text-xl font-semibold">Episodes</h2>
+        <BaseAlert
+          v-if="
+            createEpisode.isError.value ||
+            updateEpisode.isError.value ||
+            removeEpisode.isError.value ||
+            reorderEpisodes.isError.value
+          "
+          variant="error"
+          >{{
+            projectError(
+              createEpisode.error.value ??
+                updateEpisode.error.value ??
+                removeEpisode.error.value ??
+                reorderEpisodes.error.value,
+            )
+          }}</BaseAlert
+        >
+        <template v-if="addingEpisode">
+          <h3 class="text-lg font-semibold">Add episode</h3>
+          <EpisodeForm
+            submit-label="Add episode"
+            :submitting="episodeBusy"
+            @submit="createEpisode.mutate"
+          />
+          <BaseButton
+            variant="secondary"
+            :disabled="episodeBusy"
+            @click="
+              addingEpisode = false;
+              createEpisode.reset();
+            "
+            >Cancel</BaseButton
+          >
+        </template>
+        <BaseButton
+          v-else
+          variant="secondary"
+          :disabled="episodeBusy"
+          @click="
+            addingEpisode = true;
+            editingEpisode = null;
+            createEpisode.reset();
+            updateEpisode.reset();
+            removeEpisode.reset();
+            reorderEpisodes.reset();
+          "
+          >Add episode</BaseButton
+        >
         <LoadingState
           v-if="episodes.isPending.value"
           label="Loading episodes…"
@@ -371,20 +493,100 @@ const remove = useMutation({
           >
         </ErrorState>
         <EmptyState
-          v-else-if="!episodes.data.value?.length"
+          v-else-if="!orderedEpisodes.length"
           title="No episodes"
           message="This project has no episodes yet."
         />
-        <ol
-          v-else
-          class="list-inside list-decimal rounded border border-gray-300 bg-white p-5"
-        >
-          <li v-for="episode in episodes.data.value" :key="episode.id">
-            {{ episode.title }}
-          </li>
-        </ol>
+        <Accordion v-else>
+          <ol class="list-none divide-y divide-gray-200">
+            <li v-for="(episode, index) in orderedEpisodes" :key="episode.id">
+              <AccordionItem>
+                <AccordionHeader
+                  >{{ index + 1 }}. {{ episode.title }}</AccordionHeader
+                >
+                <AccordionContent>
+                  <div class="space-y-3">
+                    <p class="whitespace-pre-wrap">
+                      {{ episode.description || "No description." }}
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                      <BaseButton
+                        variant="secondary"
+                        :disabled="episodeBusy || index === 0"
+                        @click="moveEpisode(index, -1)"
+                        >Move {{ episode.title }} up</BaseButton
+                      >
+                      <BaseButton
+                        variant="secondary"
+                        :disabled="
+                          episodeBusy || index === orderedEpisodes.length - 1
+                        "
+                        @click="moveEpisode(index, 1)"
+                        >Move {{ episode.title }} down</BaseButton
+                      >
+                      <BaseButton
+                        variant="secondary"
+                        :disabled="episodeBusy"
+                        @click="
+                          editingEpisode = episode;
+                          addingEpisode = false;
+                          updateEpisode.reset();
+                          createEpisode.reset();
+                          removeEpisode.reset();
+                          reorderEpisodes.reset();
+                        "
+                        >Edit {{ episode.title }}</BaseButton
+                      >
+                      <BaseButton
+                        variant="danger"
+                        :disabled="episodeBusy"
+                        @click="
+                          deletingEpisode = episode;
+                          confirmingEpisodeDelete = true;
+                          removeEpisode.reset();
+                        "
+                        >Delete {{ episode.title }}</BaseButton
+                      >
+                    </div>
+                    <div
+                      v-if="editingEpisode?.id === episode.id"
+                      class="space-y-3"
+                    >
+                      <EpisodeForm
+                        :key="episode.id"
+                        :initial="episode"
+                        submit-label="Save episode"
+                        :submitting="episodeBusy"
+                        @submit="
+                          (input) =>
+                            updateEpisode.mutate({ id: episode.id, input })
+                        "
+                      />
+                      <BaseButton
+                        variant="secondary"
+                        :disabled="episodeBusy"
+                        @click="
+                          editingEpisode = null;
+                          updateEpisode.reset();
+                        "
+                        >Cancel</BaseButton
+                      >
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </li>
+          </ol>
+        </Accordion>
       </section>
     </template>
+    <ConfirmationDialog
+      v-model="confirmingEpisodeDelete"
+      title="Delete episode?"
+      :message="`Permanently delete ${deletingEpisode?.title ?? 'this episode'} and its contents? This cannot be undone.`"
+      confirm-label="Delete episode"
+      @confirm="deletingEpisode && removeEpisode.mutate(deletingEpisode.id)"
+    />
     <ConfirmationDialog
       v-model="confirmingCharacterDelete"
       title="Delete character?"

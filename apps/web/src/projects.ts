@@ -1,14 +1,18 @@
 import type {
   Character,
   CreateCharacterRequest,
+  CreateEpisodeRequest,
   CreateProjectRequest,
   Episode,
   Project,
+  ReorderEpisodesRequest,
   UpdateCharacterRequest,
+  UpdateEpisodeRequest,
   UpdateProjectRequest,
 } from "@storyteller/shared";
 import {
   createCharacterSchema,
+  createEpisodeSchema,
   createProjectSchema,
 } from "@storyteller/shared";
 import { createApiClient, ApiError } from "./api-client";
@@ -106,6 +110,42 @@ export const projectsApi = {
       ),
     );
   },
+  async createEpisode(
+    projectId: string,
+    input: CreateEpisodeRequest,
+  ): Promise<Episode> {
+    return required(
+      await apiClient.request<Episode>(
+        `/projects/${encodeURIComponent(projectId)}/episodes`,
+        { method: "POST", json: input },
+      ),
+    );
+  },
+  async updateEpisode(
+    id: string,
+    input: UpdateEpisodeRequest,
+  ): Promise<Episode> {
+    return required(
+      await apiClient.request<Episode>(`/episodes/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        json: input,
+      }),
+    );
+  },
+  async deleteEpisode(id: string): Promise<void> {
+    await apiClient.request<void>(`/episodes/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+  },
+  async reorderEpisodes(
+    projectId: string,
+    input: ReorderEpisodesRequest,
+  ): Promise<void> {
+    await apiClient.request<void>(
+      `/projects/${encodeURIComponent(projectId)}/episodes/order`,
+      { method: "PUT", json: input },
+    );
+  },
 };
 
 export type ProjectFields = keyof CreateProjectRequest;
@@ -151,6 +191,52 @@ export function validateCharacter(input: CreateCharacterRequest): {
   for (const issue of result.error.issues) {
     if (issue.path[0] === "name") errors.name = "Name is required.";
     if (issue.path[0] === "type") errors.type = "Select a character type.";
+  }
+  return { errors };
+}
+
+export function episodesByPosition(episodes: Episode[]): Episode[] {
+  return [...episodes].sort(
+    (a, b) => a.position - b.position || a.id.localeCompare(b.id),
+  );
+}
+
+export function movedEpisodeIds(
+  episodes: Episode[],
+  index: number,
+  offset: -1 | 1,
+): string[] | undefined {
+  const other = index + offset;
+  if (
+    index < 0 ||
+    index >= episodes.length ||
+    other < 0 ||
+    other >= episodes.length
+  )
+    return undefined;
+  const ids = episodes.map((episode) => episode.id);
+  [ids[index], ids[other]] = [ids[other]!, ids[index]!];
+  return ids;
+}
+
+export type EpisodeFieldErrors = Partial<
+  Record<keyof CreateEpisodeRequest, string>
+>;
+
+export function validateEpisode(input: CreateEpisodeRequest): {
+  value?: CreateEpisodeRequest;
+  errors: EpisodeFieldErrors;
+} {
+  const result = createEpisodeSchema.safeParse({
+    ...input,
+    title: input.title.trim(),
+  });
+  if (result.success) return { value: result.data, errors: {} };
+  const errors: EpisodeFieldErrors = {};
+  for (const issue of result.error.issues) {
+    if (issue.path[0] === "title") errors.title = "Title is required.";
+    if (issue.path[0] === "description")
+      errors.description = "Description is required.";
   }
   return { errors };
 }

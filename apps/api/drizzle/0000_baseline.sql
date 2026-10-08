@@ -1,0 +1,1 @@
+-- Establish Drizzle migration history without domain tables (introduced in TASK-007).

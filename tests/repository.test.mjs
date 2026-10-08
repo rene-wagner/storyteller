@@ -106,7 +106,7 @@ test("workspace packages and root commands form a private monorepo", () => {
     expect(appPackage.scripts.lint).toBe(
       app === "web"
         ? "oxlint --deny-warnings src vite.config.mts"
-        : "oxlint --deny-warnings src",
+        : "oxlint --deny-warnings src drizzle.config.ts",
     );
     expect(appPackage.scripts.typecheck).toBe(
       app === "web" ? "vue-tsc && tsc -p tsconfig.node.json" : "tsc",

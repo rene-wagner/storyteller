@@ -7,15 +7,21 @@
     "start": "node --env-file-if-exists=.env dist/server.js",
     "build": "tsc --noEmit false",
     "typecheck": "tsc",
-    "lint": "oxlint --deny-warnings src"
+    "lint": "oxlint --deny-warnings src drizzle.config.ts",
+    "db:generate": "node --env-file-if-exists=.env node_modules/drizzle-kit/bin.cjs generate",
+    "db:migrate": "node --env-file-if-exists=.env node_modules/drizzle-kit/bin.cjs migrate"
   },
   "devDependencies": {
     "@storyteller/config": "workspace:*",
     "@types/node": "24.19.1",
+    "@types/pg": "8.23.1",
+    "drizzle-kit": "0.31.11",
     "typescript": "5.9.3"
   },
   "dependencies": {
+    "drizzle-orm": "0.45.4",
     "fastify": "5.12.5",
+    "pg": "8.23.1",
     "zod": "4.6.5"
   }
 }

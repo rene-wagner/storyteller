@@ -1,5 +1,6 @@
 ---
- description: Implement one roadmap phase or task using subagents, validate, create a feature branch, and commit
+description: Implement one roadmap phase or task using subagents, validate, create a feature branch, and commit
+argument-hint: "<Phase N|Task N>"
 ---
 
 # Roadmap-Implementierung
@@ -7,6 +8,8 @@
 Implementiere die Phase oder den Task aus `@docs/development/ROADMAP.md`, den der Benutzer als **positive ganze Zahl** angibt.
 
 ## Eingabe
+
+Benutzereingabe: $ARGUMENTS
 
 - Akzeptiere genau eine positive ganze Zahl `N`.
 - Interpretiere `Phase N` als die vollständige Roadmap-Phase `Phase N`.

@@ -1,8 +1,10 @@
 import { createApp } from "./app.ts";
 import { ConfigurationError, parseConfig } from "./config.ts";
-import { createDatabase } from "./db/connection.ts";
 import { createCharacterRepository } from "./characters/repository.ts";
 import { createCharacterService } from "./characters/service.ts";
+import { createCuePointRepository } from "./cue-points/repository.ts";
+import { createCuePointService } from "./cue-points/service.ts";
+import { createDatabase } from "./db/connection.ts";
 import { createEpisodeRepository } from "./episodes/repository.ts";
 import { createEpisodeService } from "./episodes/service.ts";
 import { createProjectRepository } from "./projects/repository.ts";
@@ -15,6 +17,7 @@ async function main(): Promise<void> {
   const database = createDatabase(config);
   const projectRepository = createProjectRepository(database.db);
   const episodeRepository = createEpisodeRepository(database.db);
+  const sceneRepository = createSceneRepository(database.db);
   const app = createApp({
     projects: createProjectService(projectRepository),
     characters: createCharacterService(
@@ -22,9 +25,10 @@ async function main(): Promise<void> {
       projectRepository,
     ),
     episodes: createEpisodeService(episodeRepository, projectRepository),
-    scenes: createSceneService(
-      createSceneRepository(database.db),
-      episodeRepository,
+    scenes: createSceneService(sceneRepository, episodeRepository),
+    cuePoints: createCuePointService(
+      createCuePointRepository(database.db),
+      sceneRepository,
     ),
   });
   app.addHook("onClose", database.close);

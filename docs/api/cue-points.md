@@ -1,0 +1,10 @@
+# Cue Point API
+
+- `GET /scenes/:sceneId/cue-points` — list cue points in ascending `position` order (ties by `id`); an existing empty scene returns `[]`.
+- `POST /scenes/:sceneId/cue-points` — create with `{ "characterId": "<character UUID>", "spokenText": "...", "soundEffectIds": ["<media UUID>"] }`; `soundEffectIds` is optional and defaults to `[]`; returns HTTP 201. The server assigns position 0 initially, then one greater than the highest current position.
+- `PUT /scenes/:sceneId/cue-points/order` — replace the complete order with `{ "cuePointIds": ["<cue point UUID>", "..."] }`; returns HTTP 204 with no body. Supply every cue point of the scene exactly once, or `[]` if empty. Positions become 0 through n−1 in one transaction. Missing, duplicate, invalid, or foreign IDs return HTTP 400 without changing positions; an unknown scene returns HTTP 404.
+- `GET /cue-points/:cuePointId` — retrieve one cue point.
+- `PATCH /cue-points/:cuePointId` — update `characterId`, `spokenText`, and/or `soundEffectIds`; omitting the array preserves current effects, supplying it replaces all effects (use `[]` to clear them); an empty update is invalid.
+- `DELETE /cue-points/:cuePointId` — delete one cue point; returns HTTP 204.
+
+Responses include `id`, `sceneId`, `characterId`, `spokenText`, `soundEffectIds`, `position`, `createdAt`, and `updatedAt`. The array is always present, sorted by media UUID, and contains unique IDs. Assigned media items must exist and have type `sound_effect`; duplicate IDs and invalid references are rejected with HTTP 400. Assignments are saved atomically with creation or update. Spoken text may be empty. Character IDs must refer to an existing character in the project owning the scene (including on update). Clients cannot set the scene or position through these endpoints. Invalid input or character references return HTTP 400, missing scenes or cue points return HTTP 404, and exhausted positions return HTTP 409. Errors use the [standard format](./errors.md).

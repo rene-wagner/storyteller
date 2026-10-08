@@ -78,14 +78,28 @@ export const sceneSchema = z.strictObject({
   position: positionSchema,
 });
 
+const soundEffectIdsSchema = z
+  .array(idSchema)
+  .refine((ids) => new Set(ids).size === ids.length);
 export const createCuePointSchema = z.strictObject({
   characterId: idSchema,
   spokenText: z.string(),
+  soundEffectIds: soundEffectIdsSchema.optional(),
+});
+export const updateCuePointSchema = createCuePointSchema
+  .partial()
+  .refine((input) => Object.keys(input).length > 0);
+export const reorderCuePointsSchema = z.strictObject({
+  cuePointIds: z
+    .array(idSchema)
+    .refine((ids) => new Set(ids).size === ids.length),
 });
 export const cuePointSchema = z.strictObject({
   ...responseFields,
   sceneId: idSchema,
-  ...createCuePointSchema.shape,
+  characterId: idSchema,
+  spokenText: z.string(),
+  soundEffectIds: soundEffectIdsSchema,
   position: positionSchema,
 });
 
@@ -117,5 +131,7 @@ export type UpdateSceneRequest = z.infer<typeof updateSceneSchema>;
 export type ReorderScenesRequest = z.infer<typeof reorderScenesSchema>;
 export type Scene = z.infer<typeof sceneSchema>;
 export type CreateCuePointRequest = z.infer<typeof createCuePointSchema>;
+export type UpdateCuePointRequest = z.infer<typeof updateCuePointSchema>;
+export type ReorderCuePointsRequest = z.infer<typeof reorderCuePointsSchema>;
 export type CuePoint = z.infer<typeof cuePointSchema>;
 export type MediaItem = z.infer<typeof mediaItemSchema>;

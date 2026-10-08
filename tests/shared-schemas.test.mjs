@@ -7,6 +7,7 @@ import {
   createCharacterSchema,
   updateCharacterSchema,
   createCuePointSchema,
+  updateCuePointSchema,
   createEpisodeSchema,
   createProjectSchema,
   createSceneSchema,
@@ -64,7 +65,13 @@ const entities = [
     create: createCuePointSchema,
     response: cuePointSchema,
     request: { characterId: anotherId, spokenText: "Hello" },
-    record: { id, sceneId: anotherId, position: 0, ...dates },
+    record: {
+      id,
+      sceneId: anotherId,
+      soundEffectIds: [],
+      position: 0,
+      ...dates,
+    },
   },
 ];
 
@@ -127,6 +134,39 @@ test("create inputs reject invalid enum values, references and missing required 
     createCuePointSchema.safeParse({
       characterId: "other",
       spokenText: "Hello",
+    }).success,
+  ).toBe(false);
+});
+
+test("cue point effects accept unique UUID arrays, including empty replacement", () => {
+  const request = { characterId: id, spokenText: "Hello" };
+  expect(createCuePointSchema.parse(request)).toEqual(request);
+  expect(
+    createCuePointSchema.parse({ ...request, soundEffectIds: [] })
+      .soundEffectIds,
+  ).toEqual([]);
+  expect(updateCuePointSchema.parse({ soundEffectIds: [id] })).toEqual({
+    soundEffectIds: [id],
+  });
+  expect(updateCuePointSchema.parse({ soundEffectIds: [] })).toEqual({
+    soundEffectIds: [],
+  });
+  for (const soundEffectIds of [[id, id], ["bad"], [null], null]) {
+    expect(
+      createCuePointSchema.safeParse({ ...request, soundEffectIds }).success,
+    ).toBe(false);
+    expect(updateCuePointSchema.safeParse({ soundEffectIds }).success).toBe(
+      false,
+    );
+  }
+  expect(updateCuePointSchema.safeParse({}).success).toBe(false);
+  expect(
+    cuePointSchema.safeParse({
+      id,
+      sceneId: id,
+      ...dates,
+      ...request,
+      position: 0,
     }).success,
   ).toBe(false);
 });

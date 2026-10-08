@@ -4,6 +4,9 @@ import { ZodError } from "zod";
 import { CharacterDeletionConflictError } from "./characters/repository.ts";
 import { registerCharacterRoutes } from "./characters/routes.ts";
 import type { CharacterService } from "./characters/service.ts";
+import { CuePointPositionConflictError } from "./cue-points/repository.ts";
+import { registerCuePointRoutes } from "./cue-points/routes.ts";
+import type { CuePointService } from "./cue-points/service.ts";
 import { EpisodePositionConflictError } from "./episodes/repository.ts";
 import { registerEpisodeRoutes } from "./episodes/routes.ts";
 import type { EpisodeService } from "./episodes/service.ts";
@@ -34,6 +37,7 @@ export function createApp(
     characters?: CharacterService;
     episodes?: EpisodeService;
     scenes?: SceneService;
+    cuePoints?: CuePointService;
   } = {},
 ): FastifyInstance {
   const app = Fastify();
@@ -69,6 +73,7 @@ export function createApp(
       error instanceof CharacterDeletionConflictError ||
       error instanceof EpisodePositionConflictError ||
       error instanceof ScenePositionConflictError ||
+      error instanceof CuePointPositionConflictError ||
       statusCode === 409
     ) {
       return reply
@@ -97,5 +102,7 @@ export function createApp(
     registerCharacterRoutes(app, dependencies.characters);
   if (dependencies.episodes) registerEpisodeRoutes(app, dependencies.episodes);
   if (dependencies.scenes) registerSceneRoutes(app, dependencies.scenes);
+  if (dependencies.cuePoints)
+    registerCuePointRoutes(app, dependencies.cuePoints);
   return app;
 }

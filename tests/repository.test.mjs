@@ -114,7 +114,7 @@ test("workspace packages and root commands form a private monorepo", () => {
   }
 });
 
-test("Vite serves and bundles the Vue tooling probe", async () => {
+test("Vite serves and bundles the Vue shell and tooling probe", async () => {
   const webRoot = path.join(root, "apps/web");
   const pkg = readJson("apps/web/package.json");
   expect(pkg.scripts.dev).toBe("vite");
@@ -142,7 +142,10 @@ test("Vite serves and bundles the Vue tooling probe", async () => {
     expect(await html.text()).toMatch(/\/src\/main\.ts/);
     const main = await fetch(`${origin}/src/main.ts`);
     expect(main.status).toBe(200);
-    expect(await main.text()).toMatch(/ToolingCheck\.vue/);
+    expect(await main.text()).toMatch(/App\.vue/);
+    const shell = await fetch(`${origin}/src/App.vue`);
+    expect(shell.status).toBe(200);
+    expect(await shell.text()).toMatch(/ToolingCheck\.vue/);
     const component = await fetch(`${origin}/src/ToolingCheck.vue`);
     expect(component.status).toBe(200);
     const componentCode = await component.text();

@@ -38,11 +38,12 @@ native Android arm64 support.
 
 - `apps/api`: a minimal Fastify application with an importable app factory,
   separate server entry point and Zod-validated environment configuration.
-- `apps/web`: a minimal runnable Vue `<script setup>` tooling probe using Vite 8
-  and `@vitejs/plugin-vue`. Vite serves the probe in development and bundles HTML
-  and JavaScript to `dist` for production. Type checking remains separate and
-  also checks the Node-side Vite configuration; no application shell or features
-  are implemented yet.
+- `apps/web`: a Vue 3 application shell using Vite 8, Tailwind CSS 4 and Vue
+  Router. Routes for home, projects, new project, project detail and media show
+  placeholders until their feature phases. Pinia is registered for client state;
+  TanStack Vue Query handles future server state. The shared frontend API client
+  supports typed JSON and multipart requests and standardized API errors. Vite
+  bundles the frontend to `dist`; type checking also covers the Vite configuration.
 - `packages/config`: shared strict TypeScript base, Node and Vue configurations,
   consumed through workspace dependencies by both apps.
 - `.oxlintrc.json` and `.oxfmtrc.json`: common Oxlint and Oxfmt settings.
@@ -65,8 +66,11 @@ pnpm --filter @storyteller/web dev
 pnpm --filter @storyteller/web build
 ```
 
-Open the local URL printed by Vite (normally `http://localhost:5173`). The page
-only displays the existing `web` tooling marker.
+Open the local URL printed by Vite (normally `http://localhost:5173`). The shell
+links to Projects and Media Library and retains the `web` tooling marker. The API
+client defaults to same-origin requests; future pages using the API in local
+Vite development need an API proxy or a configured base URL passed to
+`createApiClient` (the API normally runs on port 3000).
 
 The API exposes `GET /health` and the project endpoints below. The HTTP server
 owns a PostgreSQL pool and closes it on shutdown. The database schema includes
@@ -86,7 +90,7 @@ server. Install Docker with Compose, then from the repository root:
 docker compose up --build -d
 docker compose run --rm api pnpm --filter @storyteller/api db:migrate
 curl http://127.0.0.1:3000/health
-# Open http://127.0.0.1:5173 for the current frontend tooling probe.
+# Open http://127.0.0.1:5173 for the frontend shell.
 ```
 
 The API creates a PostgreSQL pool at startup; migrations are explicit and must

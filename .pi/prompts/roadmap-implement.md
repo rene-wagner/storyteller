@@ -1,5 +1,5 @@
 ---
-description: Implement one roadmap phase or task using subagents, validate, create a feature branch, and commit
+description: Implement one roadmap phase or task using subagents, validate, create a feature branch, commit, and push
 argument-hint: "<Phase N|Task N>"
 ---
 
@@ -26,7 +26,7 @@ Benutzereingabe: $ARGUMENTS
 4. Führe `pnpm validate` aus. Wenn es fehlschlägt, untersuche und behebe taskbedingte Fehler und führe die Validierung erneut aus. Erstelle weder Branch noch Commit, solange die Implementierung nicht erfolgreich ist und `pnpm validate` nicht erfolgreich abgeschlossen wurde. Wenn die Fehler nicht behoben werden können, stoppe ohne Branch/Commit und berichte die Fehler.
 5. Erstelle nach erfolgreicher Validierung einen Feature-Branch für diese Arbeit. Verwende einen kurzen, sprechenden Namen mit Präfix `feature/`, zum Beispiel `feature/task-007-project-schema` oder `feature/phase-03-database-foundation`. Prüfe vor dem Wechsel, ob der Branchname bereits existiert. Überschreibe keinen existierenden Branch; wähle dann einen eindeutigen Namenszusatz.
 6. Erstelle einen passenden Conventional Commit für ausschließlich die Änderungen dieses Umfangs. Du musst nicht nachfragen, ob die Commit-Beschreibung passt. Füge keine vorher bestehenden Benutzeränderungen hinzu. Verwende kein `git add -A`; stage nur die Dateien dieser Implementierung. Committe auf dem neu erstellten Feature-Branch.
-7. Prüfe abschließend `git status` und den letzten Commit. Falls Branch-Erstellung oder Commit fehlschlägt, stoppe, bewahre Änderungen und melde den Grund. Push oder Pull Request sind nicht verlangt.
+7. Falls Branch-Erstellung oder Commit fehlschlägt, stoppe, bewahre Änderungen und melde den Grund. Pushe nach erfolgreichem Commit den neuen Feature-Branch mit `git push -u origin <Branch-Name>`. Verwende keinen Force-Push. Falls der Push fehlschlägt, stoppe und melde den Grund; erstelle keinen Pull Request. Prüfe abschließend `git status` und den letzten Commit.
 
 ## Abschlussbericht
 
@@ -36,7 +36,7 @@ Antworte auf Deutsch und nenne:
 - umgesetzte Änderungen und wichtige Dateien;
 - verwendete Subagents und wesentliche Entscheidungen;
 - Ergebnis von `pnpm validate`;
-- Branch-Name und Commit-Hash, sofern erstellt;
+- Branch-Name und Commit-Hash, sofern erstellt, sowie das Ergebnis des Pushs;
 - verbleibende, auf diesen Umfang bezogene Probleme.
 
-Behaupte nicht, dass Checks, Branch oder Commit erfolgreich waren, wenn sie nicht erfolgreich ausgeführt wurden.
+Behaupte nicht, dass Checks, Branch, Commit oder Push erfolgreich waren, wenn sie nicht erfolgreich ausgeführt wurden.

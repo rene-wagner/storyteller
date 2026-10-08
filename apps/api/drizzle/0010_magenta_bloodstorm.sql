@@ -1,0 +1,4 @@
+ALTER TABLE "scenes" ADD COLUMN "background_music_type" text DEFAULT 'background_music' NOT NULL;--> statement-breakpoint
+ALTER TABLE "scenes" ADD CONSTRAINT "scenes_background_music_id_background_music_type_media_items_id_type_fk" FOREIGN KEY ("background_music_id","background_music_type") REFERENCES "public"."media_items"("id","type") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "scenes_background_music_id_idx" ON "scenes" USING btree ("background_music_id");--> statement-breakpoint
+ALTER TABLE "scenes" ADD CONSTRAINT "scenes_background_music_type_check" CHECK ("scenes"."background_music_type" = 'background_music');

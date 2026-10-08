@@ -1,7 +1,7 @@
 # Storyteller
 
-Repository and backend foundation for an audio drama application. Phases 1–2
-(TASK-001–TASK-005) of `docs/development/ROADMAP.md` are implemented.
+Repository and database foundation for an audio drama application. TASK-001–TASK-014
+of `docs/development/ROADMAP.md` are implemented.
 
 ## Requirements and setup
 
@@ -68,10 +68,14 @@ pnpm --filter @storyteller/web build
 Open the local URL printed by Vite (normally `http://localhost:5173`). The page
 only displays the existing `web` tooling marker.
 
-The API currently exposes only `GET /health`. There are no database connections,
-media file operations, storage implementations or domain/UI features from later
-roadmap phases. Compiler output (`dist`), dependencies, coverage, TypeScript build
-information and local `.env` files are ignored; `.env.example` is tracked.
+The API currently exposes only `GET /health`. A PostgreSQL/Drizzle connection
+factory and migration tooling are available, but the HTTP server does not open a
+database connection until a later task needs one. The database schema includes
+projects, characters, episodes, scenes, cue points, media items and media
+relations; HTTP APIs, media file operations, storage implementations and domain/UI
+features belong to later roadmap phases. Compiler output (`dist`), dependencies,
+coverage, TypeScript build information and local `.env` files are ignored;
+`.env.example` is tracked.
 `AGENTS.md` and `docs/` are excluded from automatic formatting.
 
 ## Backend setup and configuration
@@ -97,8 +101,8 @@ Node may print a notice and continues with the process environment.
 
 Relative media paths are relative to the API working directory (`apps/api` for
 these PNPM scripts). The directory is neither created nor accessed in Phase 2;
-its existence/permissions and database connectivity are not checked. A PostgreSQL
-server is not needed to run the health endpoint.
+its existence/permissions and database connectivity are not checked at server
+startup. A PostgreSQL server is not needed to run the health endpoint.
 
 The API binds only to `127.0.0.1`. Check it from another terminal:
 
@@ -121,6 +125,35 @@ Configuration is validated before creating/listening with Fastify. Invalid
 configuration exits nonzero with field names and fixed diagnostic messages, never
 raw values or credentials. Listen failures also exit nonzero without stack traces.
 SIGINT (Ctrl-C) and SIGTERM close Fastify, finish shutdown and exit normally.
+
+## PostgreSQL and migrations
+
+Set `DATABASE_URL` in `apps/api/.env` (ignored by Git) or the process environment
+before running database commands from the repository root. Do not store credentials
+in tracked files. An existing PostgreSQL database and a user allowed to create
+schema objects are required. `apps/api/src/db/connection.ts` creates a Drizzle
+client backed by a `pg` pool from validated configuration; callers must close it
+when finished. It does not connect during HTTP server startup.
+
+```sh
+pnpm --filter @storyteller/api db:generate
+pnpm --filter @storyteller/api db:migrate
+```
+
+Drizzle Kit reads `apps/api/drizzle.config.ts`, the schema entry point at
+`apps/api/src/db/schema.ts`, and stores generated SQL plus metadata in
+`apps/api/drizzle/`. The initial empty baseline migration was generated with
+`pnpm --filter @storyteller/api db:generate --custom --name=baseline`. Subsequent migrations add the Phase 3 tables, constraints and media relations.
+Run `db:migrate` against an existing database to apply them in order. For future
+schema changes, run `db:generate` followed by `db:migrate`; keep migrations in
+version control. Migration 0007 makes the cue-point character foreign key
+`DEFERRABLE INITIALLY DEFERRED` so deleting a project can remove all descendants
+while directly deleting a referenced character still fails at commit. Drizzle
+cannot express this constraint property in its schema; preserve it in future
+migrations. To run database constraint tests, set `DATABASE_URL`, apply migrations,
+and run `pnpm test`. API type checking still uses strict mode; `skipLibCheck` is
+enabled only for the API because Drizzle's published declarations include
+unrelated database drivers and unresolved optional peer declarations.
 
 ## Code quality
 
@@ -158,8 +191,10 @@ startup and graceful SIGINT/SIGTERM shutdown. It builds the API before exercisin
 its production entry point; no database or media directory is needed. Run it with
 `pnpm exec vitest run tests/api.test.mjs`.
 
-Database-backed API and Vue component test infrastructure remain future roadmap
-tasks.
+`tests/db.test.mjs` checks the connection factory against a live PostgreSQL server.
+The schema tests check Phase 3 tables, references, ordering constraints and deletion
+behavior, including project cascades. These tests skip when `DATABASE_URL` is unset.
+Database-backed API and Vue component test infrastructure remain future roadmap tasks.
 
 ## Workspace execution and Termux
 

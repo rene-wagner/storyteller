@@ -1,4 +1,3 @@
-import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
   copyFileSync,
@@ -12,7 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { createRequire } from "node:module";
 import path from "node:path";
-import test from "node:test";
+import { expect, onTestFinished, test } from "vitest";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import ts from "typescript";
 
@@ -25,14 +24,14 @@ function runTool(tool, args, cwd = root) {
     [path.join(root, "node_modules", tool, "bin", tool), ...args],
     { cwd, encoding: "utf8" },
   );
-  assert.ifError(result.error);
-  assert.equal(result.signal, null);
+  expect(result.error ?? null).toBeNull();
+  expect(result.signal).toBe(null);
   return result;
 }
 
-function probeWorkspace(t) {
+function probeWorkspace() {
   const cwd = mkdtempSync(path.join(tmpdir(), "storyteller-quality-"));
-  t.after(() => rmSync(cwd, { recursive: true, force: true }));
+  onTestFinished(() => rmSync(cwd, { recursive: true, force: true }));
   for (const config of [".oxlintrc.json", ".oxfmtrc.json"]) {
     copyFileSync(path.join(root, config), path.join(cwd, config));
   }
@@ -53,15 +52,15 @@ function appConfig(app) {
     {
       ...ts.sys,
       onUnRecoverableConfigFileDiagnostic(diagnostic) {
-        assert.fail(
+        expect.unreachable(
           ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"),
         );
       },
     },
   );
-  assert.ok(config);
-  assert.deepEqual(config.errors, []);
-  assert.ok(config.fileNames.length > 0);
+  expect(config).toBeTruthy();
+  expect(config.errors).toStrictEqual([]);
+  expect(config.fileNames.length > 0).toBeTruthy();
   return config;
 }
 
@@ -81,37 +80,35 @@ function probeDiagnostics(app, source) {
 
 test("workspace packages and root commands form a private monorepo", () => {
   const pkg = readJson("package.json");
-  assert.equal(pkg.private, true);
-  assert.match(pkg.packageManager, /^pnpm@12\./);
-  assert.equal(pkg.scripts.dev, "pnpm -r --parallel dev");
+  expect(pkg.private).toBe(true);
+  expect(pkg.packageManager).toMatch(/^pnpm@12\./);
+  expect(pkg.scripts.dev).toBe("pnpm -r --parallel dev");
+  expect(pkg.scripts.test).toBe("vitest run");
+  expect(pkg.devDependencies.vitest).toBeTruthy();
   for (const command of ["build", "typecheck"]) {
-    assert.equal(pkg.scripts[command], `pnpm -r ${command}`);
+    expect(pkg.scripts[command]).toBe(`pnpm -r ${command}`);
   }
-  assert.equal(
-    pkg.scripts.validate,
+  expect(pkg.scripts.validate).toBe(
     "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
   );
   const workspace = readFileSync(
     path.join(root, "pnpm-workspace.yaml"),
     "utf8",
   );
-  assert.match(workspace, /- apps\/\*/);
-  assert.match(workspace, /- packages\/\*/);
+  expect(workspace).toMatch(/- apps\/\*/);
+  expect(workspace).toMatch(/- packages\/\*/);
   for (const app of ["api", "web"]) {
     const appPackage = readJson(`apps/${app}/package.json`);
-    assert.equal(appPackage.private, true);
-    assert.equal(
-      appPackage.devDependencies["@storyteller/config"],
+    expect(appPackage.private).toBe(true);
+    expect(appPackage.devDependencies["@storyteller/config"]).toBe(
       "workspace:*",
     );
-    assert.equal(
-      appPackage.scripts.lint,
+    expect(appPackage.scripts.lint).toBe(
       app === "web"
         ? "oxlint --deny-warnings src vite.config.mts"
         : "oxlint --deny-warnings src",
     );
-    assert.equal(
-      appPackage.scripts.typecheck,
+    expect(appPackage.scripts.typecheck).toBe(
       app === "web" ? "vue-tsc && tsc -p tsconfig.node.json" : "tsc",
     );
   }
@@ -120,8 +117,8 @@ test("workspace packages and root commands form a private monorepo", () => {
 test("Vite serves and bundles the Vue tooling probe", async () => {
   const webRoot = path.join(root, "apps/web");
   const pkg = readJson("apps/web/package.json");
-  assert.equal(pkg.scripts.dev, "vite");
-  assert.equal(pkg.scripts.build, "pnpm typecheck && vite build");
+  expect(pkg.scripts.dev).toBe("vite");
+  expect(pkg.scripts.build).toBe("pnpm typecheck && vite build");
   const require = createRequire(path.join(webRoot, "package.json"));
   const { build, createServer } = await import(
     pathToFileURL(require.resolve("vite")).href
@@ -138,89 +135,88 @@ test("Vite serves and bundles the Vue tooling probe", async () => {
   try {
     await server.listen();
     const address = server.httpServer.address();
-    assert.ok(address && typeof address !== "string");
+    expect(address && typeof address !== "string").toBeTruthy();
     const origin = `http://127.0.0.1:${address.port}`;
     const html = await fetch(origin);
-    assert.equal(html.status, 200);
-    assert.match(await html.text(), /\/src\/main\.ts/);
+    expect(html.status).toBe(200);
+    expect(await html.text()).toMatch(/\/src\/main\.ts/);
     const main = await fetch(`${origin}/src/main.ts`);
-    assert.equal(main.status, 200);
-    assert.match(await main.text(), /ToolingCheck\.vue/);
+    expect(main.status).toBe(200);
+    expect(await main.text()).toMatch(/ToolingCheck\.vue/);
     const component = await fetch(`${origin}/src/ToolingCheck.vue`);
-    assert.equal(component.status, 200);
+    expect(component.status).toBe(200);
     const componentCode = await component.text();
-    assert.match(componentCode, /toolingCheck/);
-    assert.match(componentCode, /render/);
+    expect(componentCode).toMatch(/toolingCheck/);
+    expect(componentCode).toMatch(/render/);
   } finally {
     await server.close();
   }
   const result = await build({ ...config, build: { write: false } });
-  assert.ok(!Array.isArray(result) && "output" in result);
-  assert.ok(result.output.some((file) => file.fileName === "index.html"));
-  assert.ok(
+  expect(!Array.isArray(result) && "output" in result).toBeTruthy();
+  expect(
+    result.output.some((file) => file.fileName === "index.html"),
+  ).toBeTruthy();
+  expect(
     result.output.some(
       (file) => file.type === "chunk" && file.isEntry && /web/.test(file.code),
     ),
-  );
+  ).toBeTruthy();
 });
 
 test("workspace orchestration needs no Turbo dependency or configuration", () => {
   const pkg = readJson("package.json");
-  assert.equal(pkg.devDependencies.turbo, undefined);
-  assert.equal(existsSync(path.join(root, "turbo.json")), false);
+  expect(pkg.devDependencies.turbo).toBe(undefined);
+  expect(existsSync(path.join(root, "turbo.json"))).toBe(false);
   const lockfile = readFileSync(path.join(root, "pnpm-lock.yaml"), "utf8");
-  assert.doesNotMatch(lockfile, /turbo/);
+  expect(lockfile).not.toMatch(/turbo/);
 });
 
 for (const app of ["api", "web"]) {
   test(`${app} inherits strict settings and rejects nullable string assignment`, () => {
     const { options } = appConfig(app);
-    assert.equal(options.strict, true);
-    assert.equal(options.noEmit, true);
-    assert.equal(options.target, ts.ScriptTarget.ES2022);
-    assert.equal(
-      options.moduleResolution,
+    expect(options.strict).toBe(true);
+    expect(options.noEmit).toBe(true);
+    expect(options.target).toBe(ts.ScriptTarget.ES2022);
+    expect(options.moduleResolution).toBe(
       app === "api"
         ? ts.ModuleResolutionKind.NodeNext
         : ts.ModuleResolutionKind.Bundler,
     );
-    assert.ok(
+    expect(
       probeDiagnostics(app, "export const probe: string = undefined;").some(
         (diagnostic) => diagnostic.code === 2322,
       ),
-    );
+    ).toBeTruthy();
   });
 }
 
 test("Node config allows Node globals but excludes browser globals", () => {
-  assert.deepEqual(
+  expect(
     probeDiagnostics(
       "api",
       "export const probe: string = process.release.name;",
     ),
-    [],
-  );
-  assert.ok(
+  ).toStrictEqual([]);
+  expect(
     probeDiagnostics("api", "export const probe = document.title;").some(
       (diagnostic) => diagnostic.code === 2584,
     ),
-  );
+  ).toBeTruthy();
 });
 
 test("Vue config allows browser globals but excludes Node globals", () => {
-  assert.deepEqual(
+  expect(
     probeDiagnostics("web", "export const probe: string = document.title;"),
-    [],
-  );
-  assert.ok(
+  ).toStrictEqual([]);
+  expect(
     probeDiagnostics("web", "export const probe = process.release.name;").some(
       (diagnostic) => diagnostic.code === 2591,
     ),
-  );
+  ).toBeTruthy();
 });
 
-test("Oxlint applies TypeScript rules to backend and Vue script setup", (t) => {
-  const workspace = probeWorkspace(t);
+test("Oxlint applies TypeScript rules to backend and Vue script setup", () => {
+  const workspace = probeWorkspace();
   const sources = [
     ["apps/api/src/probe.ts", "export const probe: any = 1;"],
     [
@@ -235,57 +231,57 @@ test("Oxlint applies TypeScript rules to backend and Vue script setup", (t) => {
       ["--format=json", filePath],
       workspace.cwd,
     );
-    assert.equal(result.status, 1);
+    expect(result.status).toBe(1);
     const diagnostics = JSON.parse(result.stdout).diagnostics;
-    assert.ok(
+    expect(
       diagnostics.some((diagnostic) => /no-explicit-any/.test(diagnostic.code)),
       result.stdout,
-    );
-    assert.ok(
+    ).toBeTruthy();
+    expect(
       diagnostics.every((diagnostic) => !/parse/.test(diagnostic.code)),
-    );
+    ).toBeTruthy();
     workspace.write(filePath, source.replace(": any", ": number"));
-    assert.equal(runTool("oxlint", [filePath], workspace.cwd).status, 0);
+    expect(runTool("oxlint", [filePath], workspace.cwd).status).toBe(0);
   }
 });
 
-test("Oxlint rejects unused variables and unknown Node globals", (t) => {
-  const workspace = probeWorkspace(t);
+test("Oxlint rejects unused variables and unknown Node globals", () => {
+  const workspace = probeWorkspace();
   for (const [file, source, rule] of [
     ["apps/api/src/probe.ts", "const unused = 1;", "no-unused-vars"],
     ["tests/probe.mjs", "console.log(unknownGlobal);", "no-undef"],
   ]) {
     workspace.write(file, source);
     const result = runTool("oxlint", ["--format=json", file], workspace.cwd);
-    assert.equal(result.status, 1);
-    assert.ok(
+    expect(result.status).toBe(1);
+    expect(
       JSON.parse(result.stdout).diagnostics.some((diagnostic) =>
         diagnostic.code.includes(rule),
       ),
-    );
+    ).toBeTruthy();
   }
   workspace.write("tests/probe.mjs", "console.log(process.version);");
-  assert.equal(runTool("oxlint", ["tests/probe.mjs"], workspace.cwd).status, 0);
+  expect(runTool("oxlint", ["tests/probe.mjs"], workspace.cwd).status).toBe(0);
 });
 
-test("Oxlint rejects invalid Vue script setup exports", (t) => {
-  const workspace = probeWorkspace(t);
+test("Oxlint rejects invalid Vue script setup exports", () => {
+  const workspace = probeWorkspace();
   const file = "apps/web/src/Probe.vue";
   workspace.write(
     file,
     '<script setup lang="ts">export const probe = 1;</script>',
   );
   const result = runTool("oxlint", ["--format=json", file], workspace.cwd);
-  assert.equal(result.status, 1);
-  assert.ok(
+  expect(result.status).toBe(1);
+  expect(
     JSON.parse(result.stdout).diagnostics.some((diagnostic) =>
       /no-export-in-script-setup/.test(diagnostic.code),
     ),
-  );
+  ).toBeTruthy();
 });
 
-test("lint and formatting ignore generated files and user-owned docs", (t) => {
-  const workspace = probeWorkspace(t);
+test("lint and formatting ignore generated files and user-owned docs", () => {
+  const workspace = probeWorkspace();
   for (const file of [
     "apps/api/dist/probe.js",
     "apps/web/coverage/probe.js",
@@ -302,14 +298,14 @@ test("lint and formatting ignore generated files and user-owned docs", (t) => {
       ["oxfmt", ["--write", "--no-error-on-unmatched-pattern", file]],
     ]) {
       const result = runTool(tool, args, workspace.cwd);
-      assert.equal(result.status, 0, `${tool}: ${file}: ${result.stderr}`);
+      expect(result.status, `${tool}: ${file}: ${result.stderr}`).toBe(0);
     }
-    assert.equal(readFileSync(path.join(workspace.cwd, file), "utf8"), source);
+    expect(readFileSync(path.join(workspace.cwd, file), "utf8")).toBe(source);
   }
 });
 
-test("Oxfmt enforces the shared style for TypeScript and Vue", (t) => {
-  const workspace = probeWorkspace(t);
+test("Oxfmt enforces the shared style for TypeScript and Vue", () => {
+  const workspace = probeWorkspace();
   for (const [file, source] of [
     ["apps/api/src/probe.ts", "export const probe='value'"],
     [
@@ -318,35 +314,35 @@ test("Oxfmt enforces the shared style for TypeScript and Vue", (t) => {
     ],
   ]) {
     workspace.write(file, source);
-    assert.equal(runTool("oxfmt", ["--check", file], workspace.cwd).status, 1);
-    assert.equal(runTool("oxfmt", ["--write", file], workspace.cwd).status, 0);
-    assert.match(
-      readFileSync(path.join(workspace.cwd, file), "utf8"),
+    expect(runTool("oxfmt", ["--check", file], workspace.cwd).status).toBe(1);
+    expect(runTool("oxfmt", ["--write", file], workspace.cwd).status).toBe(0);
+    expect(readFileSync(path.join(workspace.cwd, file), "utf8")).toMatch(
       /probe = "value";/,
     );
-    assert.equal(runTool("oxfmt", ["--check", file], workspace.cwd).status, 0);
+    expect(runTool("oxfmt", ["--check", file], workspace.cwd).status).toBe(0);
   }
 });
 
 test("quality scripts use only Oxlint and Oxfmt", () => {
   const pkg = readJson("package.json");
-  assert.equal(
-    pkg.scripts.lint,
+  expect(pkg.scripts.lint).toBe(
     "pnpm -r lint && pnpm lint:root && pnpm format:check",
   );
-  assert.equal(pkg.scripts["lint:root"], "oxlint --deny-warnings tests");
-  assert.equal(pkg.scripts.format, "oxfmt --write .");
-  assert.equal(pkg.scripts["format:check"], "oxfmt --check .");
-  assert.ok(pkg.devDependencies.oxlint);
-  assert.ok(pkg.devDependencies.oxfmt);
+  expect(pkg.scripts["lint:root"]).toBe(
+    "oxlint --deny-warnings tests vitest.config.mjs",
+  );
+  expect(pkg.scripts.format).toBe("oxfmt --write .");
+  expect(pkg.scripts["format:check"]).toBe("oxfmt --check .");
+  expect(pkg.devDependencies.oxlint).toBeTruthy();
+  expect(pkg.devDependencies.oxfmt).toBeTruthy();
   for (const dependency of Object.keys(pkg.devDependencies)) {
-    assert.doesNotMatch(dependency, /eslint|prettier/);
+    expect(dependency).not.toMatch(/eslint|prettier/);
   }
   for (const file of [
     "eslint.config.mjs",
     ".prettierrc.json",
     ".prettierignore",
   ]) {
-    assert.equal(existsSync(path.join(root, file)), false);
+    expect(existsSync(path.join(root, file))).toBe(false);
   }
 });

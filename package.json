@@ -12,15 +12,16 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r lint && pnpm lint:root && pnpm format:check",
     "typecheck": "pnpm -r typecheck",
-    "test": "node --test tests/*.test.mjs",
+    "test": "vitest run",
     "validate": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "lint:root": "oxlint --deny-warnings tests",
+    "lint:root": "oxlint --deny-warnings tests vitest.config.mjs",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check ."
   },
   "devDependencies": {
     "oxfmt": "0.72.0",
     "oxlint": "1.87.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "5.0.3"
   }
 }

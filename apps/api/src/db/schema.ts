@@ -1,3 +1,4 @@
+import type { CharacterType, MediaType } from "@storyteller/shared";
 import { sql } from "drizzle-orm";
 import {
   bigint,
@@ -96,7 +97,7 @@ export const characters = pgTable(
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
-    type: text("type").$type<"main" | "supporting">().notNull(),
+    type: text("type").$type<CharacterType>().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -117,7 +118,7 @@ export const mediaItems = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     name: text("name").notNull(),
-    type: text("type").$type<"background_music" | "sound_effect">().notNull(),
+    type: text("type").$type<MediaType>().notNull(),
     fileName: text("file_name").notNull(),
     storageKey: text("storage_key").notNull(),
     mimeType: text("mime_type").notNull(),

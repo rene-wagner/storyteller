@@ -19,6 +19,7 @@
     "typescript": "5.9.3"
   },
   "dependencies": {
+    "@storyteller/shared": "workspace:*",
     "drizzle-orm": "0.45.4",
     "fastify": "5.12.5",
     "pg": "8.23.1",

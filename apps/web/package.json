@@ -9,6 +9,7 @@
     "lint": "oxlint --deny-warnings src vite.config.mts"
   },
   "dependencies": {
+    "@storyteller/shared": "workspace:*",
     "vue": "3.5.43"
   },
   "devDependencies": {

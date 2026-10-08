@@ -1,7 +1,7 @@
 # Storyteller
 
-Repository foundation for an audio drama application. Only Phase 1
-(TASK-001–TASK-003) of `docs/development/ROADMAP.md` is implemented.
+Repository and backend foundation for an audio drama application. Phases 1–2
+(TASK-001–TASK-005) of `docs/development/ROADMAP.md` are implemented.
 
 ## Requirements and setup
 
@@ -23,20 +23,21 @@ native Android arm64 support.
 
 ## Commands
 
-| Command             | Purpose                                                                        |
-| ------------------- | ------------------------------------------------------------------------------ |
-| `pnpm dev`          | Run the API compiler watcher and Vite development server in parallel via PNPM  |
-| `pnpm build`        | Compile the API probe and typecheck/bundle the Vue frontend via recursive PNPM |
-| `pnpm lint`         | Lint both apps via recursive PNPM, then lint root tests and check formatting   |
-| `pnpm typecheck`    | Check both apps via recursive PNPM, including Vue single-file components       |
-| `pnpm test`         | Run repository-configuration tests once using Vitest                           |
-| `pnpm format:check` | Check formatting without changing files                                        |
-| `pnpm format`       | Format owned source and configuration files                                    |
-| `pnpm validate`     | Run lint, typecheck, tests and build in that order; stop on failure            |
+| Command             | Purpose                                                                      |
+| ------------------- | ---------------------------------------------------------------------------- |
+| `pnpm dev`          | Run the API and Vite development server in parallel via PNPM                 |
+| `pnpm build`        | Compile the API and typecheck/bundle the Vue frontend via recursive PNPM     |
+| `pnpm lint`         | Lint both apps via recursive PNPM, then lint root tests and check formatting |
+| `pnpm typecheck`    | Check both apps via recursive PNPM, including Vue single-file components     |
+| `pnpm test`         | Run repository and backend-foundation tests once using Vitest                |
+| `pnpm format:check` | Check formatting without changing files                                      |
+| `pnpm format`       | Format owned source and configuration files                                  |
+| `pnpm validate`     | Run lint, typecheck, tests and build in that order; stop on failure          |
 
 ## Structure and scope
 
-- `apps/api`: a Node TypeScript compiler probe, not a Fastify application.
+- `apps/api`: a minimal Fastify application with an importable app factory,
+  separate server entry point and Zod-validated environment configuration.
 - `apps/web`: a minimal runnable Vue `<script setup>` tooling probe using Vite 8
   and `@vitejs/plugin-vue`. Vite serves the probe in development and bundles HTML
   and JavaScript to `dist` for production. Type checking remains separate and
@@ -67,10 +68,59 @@ pnpm --filter @storyteller/web build
 Open the local URL printed by Vite (normally `http://localhost:5173`). The page
 only displays the existing `web` tooling marker.
 
-There are no routes, environment validation, database connections, domain/UI
-features or dependencies for later roadmap phases. Compiler output (`dist`),
-dependencies, coverage and TypeScript build information are ignored.
+The API currently exposes only `GET /health`. There are no database connections,
+media file operations, storage implementations or domain/UI features from later
+roadmap phases. Compiler output (`dist`), dependencies, coverage, TypeScript build
+information and local `.env` files are ignored; `.env.example` is tracked.
 `AGENTS.md` and `docs/` are excluded from automatic formatting.
+
+## Backend setup and configuration
+
+From the repository root:
+
+```sh
+cp apps/api/.env.example apps/api/.env
+pnpm --filter @storyteller/api dev
+```
+
+The example contains a credential-free local PostgreSQL URL, not production
+credentials. Keep real credentials only in the ignored `.env` file or process
+environment. Both API scripts optionally load `apps/api/.env` using Node's built-in
+support; existing process environment values take precedence. Without that file,
+Node may print a notice and continues with the process environment.
+
+| Variable                  | Default   | Validation                                                                                           |
+| ------------------------- | --------- | ---------------------------------------------------------------------------------------------------- |
+| `PORT`                    | `3000`    | Decimal integer from 1 to 65535; port 0 is not accepted                                              |
+| `DATABASE_URL`            | Required  | `postgres://` or `postgresql://` URL with a host and database name; an explicit port must be 1–65535 |
+| `MEDIA_STORAGE_DIRECTORY` | `./media` | Non-empty path after trimming, without NUL or line breaks                                            |
+
+Relative media paths are relative to the API working directory (`apps/api` for
+these PNPM scripts). The directory is neither created nor accessed in Phase 2;
+its existence/permissions and database connectivity are not checked. A PostgreSQL
+server is not needed to run the health endpoint.
+
+The API binds only to `127.0.0.1`. Check it from another terminal:
+
+```sh
+curl http://127.0.0.1:3000/health
+# {"status":"ok"} with HTTP 200
+```
+
+Development uses Node 24+'s native TypeScript type stripping. It does not typecheck
+or automatically restart: stop with Ctrl-C and rerun after changes. Use
+`pnpm --filter @storyteller/api typecheck` for strict type checking. Production
+still compiles with `tsc` (relative TypeScript imports are rewritten to JavaScript):
+
+```sh
+pnpm --filter @storyteller/api build
+pnpm --filter @storyteller/api start
+```
+
+Configuration is validated before creating/listening with Fastify. Invalid
+configuration exits nonzero with field names and fixed diagnostic messages, never
+raw values or credentials. Listen failures also exit nonzero without stack traces.
+SIGINT (Ctrl-C) and SIGTERM close Fastify, finish shutdown and exit normally.
 
 ## Code quality
 
@@ -102,16 +152,23 @@ comparisons) and `onTestFinished` for temporary-directory cleanup. Node APIs and
 child processes remain available; no browser/DOM test environment is needed for
 these repository checks.
 
-Backend API and Vue component test infrastructure remain future roadmap tasks.
+`tests/api.test.mjs` covers the health response, valid/invalid configuration,
+refused startup (including an occupied port), actual local development/compiled
+startup and graceful SIGINT/SIGTERM shutdown. It builds the API before exercising
+its production entry point; no database or media directory is needed. Run it with
+`pnpm exec vitest run tests/api.test.mjs`.
+
+Database-backed API and Vue component test infrastructure remain future roadmap
+tasks.
 
 ## Workspace execution and Termux
 
 Root scripts use `pnpm -r` to run workspace tasks in dependency order. Packages
 without the requested script (such as `packages/config`) are skipped, and the
 workspace root is excluded to avoid recursion. Development uses
-`pnpm -r --parallel dev` so long-running watchers start together instead of
-waiting for another watcher to finish. No separate task runner or task cache is
-configured.
+`pnpm -r --parallel dev` so the long-running API and Vite server start together
+instead of waiting for another process to finish. No separate task runner or task
+cache is configured.
 
 The JavaScript tooling was checked on Node.js 26.3.1 and PNPM 12.10.1 on Android
 arm64. The same root commands, including `pnpm validate`, work under Termux;

@@ -10,6 +10,7 @@ import {
   scenesByPosition,
 } from "../projects";
 import SceneForm from "./SceneForm.vue";
+import SceneCuePoints from "./SceneCuePoints.vue";
 import Accordion from "./ui/Accordion.vue";
 import AccordionContent from "./ui/AccordionContent.vue";
 import AccordionHeader from "./ui/AccordionHeader.vue";
@@ -21,7 +22,7 @@ import EmptyState from "./ui/EmptyState.vue";
 import ErrorState from "./ui/ErrorState.vue";
 import LoadingState from "./ui/LoadingState.vue";
 
-const props = defineProps<{ episodeId: string }>();
+const props = defineProps<{ episodeId: string; projectId: string }>();
 const queryClient = useQueryClient();
 const scenes = useQuery({
   queryKey: computed(() => projectKeys.scenes(props.episodeId)),
@@ -274,6 +275,7 @@ function moveScene(index: number, offset: -1 | 1): void {
                     >Cancel</BaseButton
                   >
                 </div>
+                <SceneCuePoints :scene-id="scene.id" :project-id="projectId" />
               </div>
             </AccordionContent>
           </AccordionItem>

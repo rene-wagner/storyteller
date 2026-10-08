@@ -73,7 +73,7 @@ packages/
   - build;
   - lint;
   - type checking;
-  - testing.
+  - testing (run repository checks with Vitest in a Node environment).
 
 Result
 
@@ -1400,7 +1400,7 @@ TASK-064 — Add Backend Test Infrastructure
 
 Tasks
 
-- Configure the backend test framework.
+- Configure Vitest for backend tests, building on the existing repository test runner.
 - Add test database support.
 - Add helpers for Fastify API tests.
 
@@ -1468,7 +1468,7 @@ TASK-069 — Add Frontend Test Infrastructure
 
 Tasks
 
-Configure tests for:
+Configure Vitest and an appropriate DOM environment for:
 
 - Vue components;
 - composables;

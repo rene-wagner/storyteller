@@ -29,7 +29,7 @@ native Android arm64 support.
 | `pnpm build`        | Compile the API probe and typecheck/bundle the Vue frontend via recursive PNPM |
 | `pnpm lint`         | Lint both apps via recursive PNPM, then lint root tests and check formatting   |
 | `pnpm typecheck`    | Check both apps via recursive PNPM, including Vue single-file components       |
-| `pnpm test`         | Run repository-configuration tests using Node's built-in test runner           |
+| `pnpm test`         | Run repository-configuration tests once using Vitest                           |
 | `pnpm format:check` | Check formatting without changing files                                        |
 | `pnpm format`       | Format owned source and configuration files                                    |
 | `pnpm validate`     | Run lint, typecheck, tests and build in that order; stop on failure            |
@@ -49,6 +49,8 @@ native Android arm64 support.
   (including rejected invalid types and isolated Node/browser globals), Vue/TS
   script lint rules, formatting/ignore-policy checks and Vite development/build
   smoke tests.
+- `vitest.config.mjs`: Vitest configuration for root repository tests in the
+  Node environment, with a 30-second per-test timeout for tooling smoke tests.
 
 Vite is used where browser bundling is needed. The Node API retains `tsc`, and
 `packages/config` distributes JSON configuration directly without a build step.
@@ -75,8 +77,8 @@ dependencies, coverage and TypeScript build information are ignored.
 Oxlint uses its correctness rules with the native TypeScript and Vue plugins.
 Explicit `any`, unused variables, `var` and avoidable `let` declarations are
 rejected. Both apps and the root tests use the shared configuration; lint warnings
-also fail validation. `pnpm lint:root` checks the root tests independently of
-workspace scripts.
+also fail validation. `pnpm lint:root` checks the root tests and Vitest
+configuration independently of workspace scripts.
 Type checking remains a separate step using `tsc` and `vue-tsc`; type-aware Oxlint
 rules are not enabled.
 
@@ -89,6 +91,18 @@ Oxfmt retains the existing style: semicolons, double quotes, trailing commas and
 an 80-character print width. Package-key sorting is disabled to avoid unrelated
 reordering. Generated files, the lockfile and user-owned documentation retain
 their formatting exclusions.
+
+## Tests
+
+Vitest replaces Node's built-in test runner. `pnpm test` runs the existing
+`tests/**/*.test.mjs` suite once; use `pnpm exec vitest` for watch mode or
+`pnpm exec vitest run tests/repository.test.mjs` for the specific test file.
+Tests use Vitest's `expect` assertions (`toStrictEqual` for strict deep
+comparisons) and `onTestFinished` for temporary-directory cleanup. Node APIs and
+child processes remain available; no browser/DOM test environment is needed for
+these repository checks.
+
+Backend API and Vue component test infrastructure remain future roadmap tasks.
 
 ## Workspace execution and Termux
 

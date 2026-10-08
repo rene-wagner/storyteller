@@ -20,6 +20,9 @@ export const createProjectSchema = z.strictObject({
   genre: z.string().min(1),
   description: z.string(),
 });
+export const updateProjectSchema = createProjectSchema
+  .partial()
+  .refine((input) => Object.keys(input).length > 0);
 export const projectSchema = z.strictObject({
   ...responseFields,
   ...createProjectSchema.shape,
@@ -83,6 +86,7 @@ export const mediaItemSchema = z.strictObject({
 export type CharacterType = z.infer<typeof characterTypeSchema>;
 export type MediaType = z.infer<typeof mediaTypeSchema>;
 export type CreateProjectRequest = z.infer<typeof createProjectSchema>;
+export type UpdateProjectRequest = z.infer<typeof updateProjectSchema>;
 export type Project = z.infer<typeof projectSchema>;
 export type CreateCharacterRequest = z.infer<typeof createCharacterSchema>;
 export type Character = z.infer<typeof characterSchema>;

@@ -1,7 +1,7 @@
 # Storyteller
 
-Repository and database foundation for an audio drama application. TASK-001–TASK-014
-of `docs/development/ROADMAP.md` are implemented.
+Repository and project API foundation for an audio drama application. Phase 5
+(TASK-017–TASK-020) of `docs/development/ROADMAP.md` is implemented.
 
 ## Requirements and setup
 
@@ -68,12 +68,11 @@ pnpm --filter @storyteller/web build
 Open the local URL printed by Vite (normally `http://localhost:5173`). The page
 only displays the existing `web` tooling marker.
 
-The API currently exposes only `GET /health`. A PostgreSQL/Drizzle connection
-factory and migration tooling are available, but the HTTP server does not open a
-database connection until a later task needs one. The database schema includes
+The API exposes `GET /health` and the project endpoints below. The HTTP server
+owns a PostgreSQL pool and closes it on shutdown. The database schema includes
 projects, characters, episodes, scenes, cue points, media items and media
-relations; HTTP APIs, media file operations, storage implementations and domain/UI
-features belong to later roadmap phases. Compiler output (`dist`), dependencies,
+relations; APIs for other resources, media file operations, storage implementations
+and domain/UI features belong to later roadmap phases. Compiler output (`dist`), dependencies,
 coverage, TypeScript build information and private `.env.local` files are ignored.
 The root `.env` (local Docker defaults) and `apps/api/.env.example` are tracked.
 `AGENTS.md` and `docs/` are excluded from automatic formatting.
@@ -90,8 +89,8 @@ curl http://127.0.0.1:3000/health
 # Open http://127.0.0.1:5173 for the current frontend tooling probe.
 ```
 
-The API does not connect to PostgreSQL at startup; migrations are explicit and
-must be run before using database-backed features or tests. In the default
+The API creates a PostgreSQL pool at startup; migrations are explicit and must
+be run before using project endpoints or database-backed tests. In the default
 setup, source changes require `docker compose up --build -d` again. For live
 updates, use the optional watch override:
 
@@ -160,8 +159,8 @@ Node may print a notice and continues with the process environment.
 
 Relative media paths are relative to the API working directory (`apps/api` for
 these PNPM scripts). The directory is neither created nor accessed in Phase 2;
-its existence/permissions and database connectivity are not checked at server
-startup. A PostgreSQL server is not needed to run the health endpoint.
+its existence/permissions are not checked at server startup. The pool connects
+on first query; a PostgreSQL server is not needed to run the health endpoint.
 
 The API binds only to `127.0.0.1`. Check it from another terminal:
 
@@ -185,6 +184,23 @@ configuration exits nonzero with field names and fixed diagnostic messages, neve
 raw values or credentials. Listen failures also exit nonzero without stack traces.
 SIGINT (Ctrl-C) and SIGTERM close Fastify, finish shutdown and exit normally.
 
+## Project API
+
+Apply migrations before using these endpoints. Requests and responses use JSON;
+project responses include `id`, `title`, `genre`, `description`, `createdAt`
+and `updatedAt` (ISO timestamps).
+
+| Method and path               | Behavior                                                                                                                |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `POST /projects`              | Require `title` and `genre` (nonempty strings) and `description` (string); persist and return the project with HTTP 201 |
+| `GET /projects`               | Return all projects, newest `updatedAt` first; ties sort by `id` descending                                             |
+| `GET /projects/:projectId`    | Return one project, or HTTP 404                                                                                         |
+| `PATCH /projects/:projectId`  | Update one or more of `title`, `genre`, `description`; refresh `updatedAt` and return the updated project, or HTTP 404  |
+| `DELETE /projects/:projectId` | Delete the project and its dependent domain records via database cascades; return HTTP 204 without a body, or HTTP 404  |
+
+Project IDs must be UUIDs. Malformed IDs, empty patches and invalid fields return
+HTTP 400. Errors use `{ "error": { "code": "VALIDATION_ERROR", "message": "The request contains invalid data.", "details": [] } }` (with `NOT_FOUND` for unknown IDs). If another project's cue point still references a character in the deleted project, deletion leaves all data intact and returns HTTP 409 with `CONFLICT`. Other database failures return a generic HTTP 500 without exposing internals.
+
 ## PostgreSQL and migrations
 
 Set `DATABASE_URL` in `apps/api/.env` (ignored by Git) or the process environment
@@ -192,7 +208,7 @@ before running database commands from the repository root. Do not store credenti
 in tracked files. An existing PostgreSQL database and a user allowed to create
 schema objects are required. `apps/api/src/db/connection.ts` creates a Drizzle
 client backed by a `pg` pool from validated configuration; callers must close it
-when finished. It does not connect during HTTP server startup.
+when finished. The HTTP server creates a pool at startup and closes it with Fastify.
 
 ```sh
 pnpm --filter @storyteller/api db:generate
@@ -253,7 +269,12 @@ its production entry point; no database or media directory is needed. Run it wit
 `tests/db.test.mjs` checks the connection factory against a live PostgreSQL server.
 The schema tests check Phase 3 tables, references, ordering constraints and deletion
 behavior, including project cascades. These tests skip when `DATABASE_URL` is unset.
-Database-backed API and Vue component test infrastructure remain future roadmap tasks.
+`tests/projects-api.test.mjs` checks request validation and response behavior
+without a database; its PostgreSQL-backed test checks persisted CRUD, list ordering,
+timestamps and dependent-record cascades when `DATABASE_URL` is set and migrations
+are applied. `tests/projects-deletion-conflict.test.mjs` verifies that a cross-project
+cue-point reference prevents deletion without losing data. Vue component test
+infrastructure remains a future roadmap task.
 
 ## Workspace execution and Termux
 

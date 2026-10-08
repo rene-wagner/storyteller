@@ -91,10 +91,25 @@ curl http://127.0.0.1:3000/health
 ```
 
 The API does not connect to PostgreSQL at startup; migrations are explicit and
-must be run before using database-backed features or tests. Source changes require
-`docker compose up --build -d` again; this is not a hot-reload setup. PostgreSQL
-and future media files persist in named volumes. `docker compose down` stops the
-stack; `docker compose down -v` also **deletes** database and media data.
+must be run before using database-backed features or tests. In the default
+setup, source changes require `docker compose up --build -d` again. For live
+updates, use the optional watch override:
+
+```sh
+docker compose -f compose.yaml -f compose.watch.yaml up --build -d
+# After starting the stack, run the same migration command shown above.
+```
+
+The override bind-mounts the API and web `src` directories, plus the web HTML
+entry and Vite configuration. Vite updates the browser when frontend files
+change; Node's watch mode restarts the API when its imported source changes.
+Check `docker compose -f compose.yaml -f compose.watch.yaml logs -f api web`
+for restarts. Changes to dependencies, package manifests, migrations or other
+unmounted files still require a rebuild. If Vite receives no host file events
+on your platform, enable polling in the Vite configuration for that platform.
+PostgreSQL and future media files persist in named volumes. Use the same
+Compose file selection for `down` as for `up`. `docker compose down -v` also
+**deletes** database and media data.
 Ports are published only on the host loopback interface. `DB_PORT`, `API_PORT`
 and `WEB_PORT` in the root `.env` set host ports (defaults: 5432, 3000, 5173).
 The container-side ports stay fixed. The API binds to all container interfaces
@@ -108,6 +123,10 @@ the repository root and pass both files to every Compose command, for example:
 docker compose --env-file .env --env-file .env.local up --build -d
 docker compose --env-file .env --env-file .env.local run --rm api pnpm --filter @storyteller/api db:migrate
 ```
+
+To combine private values with watch mode, add
+`-f compose.yaml -f compose.watch.yaml` to the commands above. Compose file
+and environment-file options go before the subcommand (`up`, `run`, etc.).
 
 `.env.local` is Git-ignored and excluded from Docker builds. Set
 `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` and/or host ports there.

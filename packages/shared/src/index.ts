@@ -32,6 +32,9 @@ export const createCharacterSchema = z.strictObject({
   name: z.string().min(1),
   type: characterTypeSchema,
 });
+export const updateCharacterSchema = createCharacterSchema
+  .partial()
+  .refine((input) => Object.keys(input).length > 0);
 export const characterSchema = z.strictObject({
   ...responseFields,
   projectId: idSchema,
@@ -89,6 +92,7 @@ export type CreateProjectRequest = z.infer<typeof createProjectSchema>;
 export type UpdateProjectRequest = z.infer<typeof updateProjectSchema>;
 export type Project = z.infer<typeof projectSchema>;
 export type CreateCharacterRequest = z.infer<typeof createCharacterSchema>;
+export type UpdateCharacterRequest = z.infer<typeof updateCharacterSchema>;
 export type Character = z.infer<typeof characterSchema>;
 export type CreateEpisodeRequest = z.infer<typeof createEpisodeSchema>;
 export type Episode = z.infer<typeof episodeSchema>;

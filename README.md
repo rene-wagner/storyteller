@@ -201,6 +201,19 @@ and `updatedAt` (ISO timestamps).
 Project IDs must be UUIDs. Malformed IDs, empty patches and invalid fields return
 HTTP 400. Errors use `{ "error": { "code": "VALIDATION_ERROR", "message": "The request contains invalid data.", "details": [] } }` (with `NOT_FOUND` for unknown IDs). If another project's cue point still references a character in the deleted project, deletion leaves all data intact and returns HTTP 409 with `CONFLICT`. Other database failures return a generic HTTP 500 without exposing internals.
 
+## Character API
+
+Characters belong to projects. Responses include `id`, `projectId`, `name`, `type`, `createdAt` and `updatedAt` (ISO timestamps).
+
+| Method and path                        | Behavior                                                                                                                        |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /projects/:projectId/characters`  | List the project's characters by name, then ID; missing project returns HTTP 404                                                |
+| `POST /projects/:projectId/characters` | Create a character with nonempty `name` and `type` (`main` or `supporting`); return HTTP 201, or HTTP 404 for a missing project |
+| `PATCH /characters/:characterId`       | Update `name` and/or `type`, refresh `updatedAt` and return the character, or HTTP 404                                          |
+| `DELETE /characters/:characterId`      | Delete an unreferenced character; return HTTP 204 without a body, HTTP 404 if missing, or HTTP 409 if a cue point references it |
+
+IDs must be UUIDs. Invalid input, empty patches and attempts to change `projectId` return HTTP 400 in the standard error format described above. Referenced-character deletion leaves the character and its cue points intact; unexpected database failures return a generic HTTP 500.
+
 ## PostgreSQL and migrations
 
 Set `DATABASE_URL` in `apps/api/.env` (ignored by Git) or the process environment

@@ -39,10 +39,11 @@ native Android arm64 support.
 - `apps/api`: a minimal Fastify application with an importable app factory,
   separate server entry point and Zod-validated environment configuration.
 - `apps/web`: a Vue 3 application shell using Vite 8, Tailwind CSS 4 and Vue
-  Router. Routes for home, projects, new project, project detail and media show
-  placeholders until their feature phases. Pinia is registered for client state;
-  TanStack Vue Query handles future server state. The shared frontend API client
-  supports typed JSON and multipart requests and standardized API errors. Vite
+  Router. Project list, creation and detail pages support project CRUD and
+  read-only character/episode lists; the media page remains a placeholder.
+  Pinia is registered for client state; TanStack Vue Query handles server state.
+  The shared frontend API client supports typed JSON and multipart requests and
+  standardized API errors. Vite
   bundles the frontend to `dist`; type checking also covers the Vite configuration.
 - `packages/config`: shared strict TypeScript base, Node and Vue configurations,
   consumed through workspace dependencies by both apps.
@@ -67,10 +68,12 @@ pnpm --filter @storyteller/web build
 ```
 
 Open the local URL printed by Vite (normally `http://localhost:5173`). The shell
-links to Projects and Media Library and retains the `web` tooling marker. The API
-client defaults to same-origin requests; future pages using the API in local
-Vite development need an API proxy or a configured base URL passed to
-`createApiClient` (the API normally runs on port 3000).
+links to Projects and Media Library and retains the `web` tooling marker.
+Project pages call `/api/projects` on the web origin. Vite proxies `/api` to the
+backend (default `http://127.0.0.1:3000`) and removes that prefix; set
+`API_PROXY_TARGET` for another backend address. In Compose the web service
+uses `http://api:3000`. When serving a production build, configure the web
+server to forward `/api/*` to the backend without the `/api` prefix.
 
 The API exposes `GET /health` and the project endpoints below. The HTTP server
 owns a PostgreSQL pool and closes it on shutdown. The database schema includes
@@ -90,7 +93,7 @@ server. Install Docker with Compose, then from the repository root:
 docker compose up --build -d
 docker compose run --rm api pnpm --filter @storyteller/api db:migrate
 curl http://127.0.0.1:3000/health
-# Open http://127.0.0.1:5173 for the frontend shell.
+# Open http://127.0.0.1:5173 for the frontend.
 ```
 
 The API creates a PostgreSQL pool at startup; migrations are explicit and must
@@ -290,8 +293,9 @@ behavior, including project cascades. These tests skip when `DATABASE_URL` is un
 without a database; its PostgreSQL-backed test checks persisted CRUD, list ordering,
 timestamps and dependent-record cascades when `DATABASE_URL` is set and migrations
 are applied. `tests/projects-deletion-conflict.test.mjs` verifies that a cross-project
-cue-point reference prevents deletion without losing data. Vue component test
-infrastructure remains a future roadmap task.
+cue-point reference prevents deletion without losing data. The Node-based
+`tests/web-projects.test.mjs` checks project form validation and frontend API
+requests; Vue component test infrastructure remains a future roadmap task.
 
 ## Workspace execution and Termux
 

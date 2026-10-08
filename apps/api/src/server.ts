@@ -3,6 +3,8 @@ import { ConfigurationError, parseConfig } from "./config.ts";
 import { createDatabase } from "./db/connection.ts";
 import { createCharacterRepository } from "./characters/repository.ts";
 import { createCharacterService } from "./characters/service.ts";
+import { createEpisodeRepository } from "./episodes/repository.ts";
+import { createEpisodeService } from "./episodes/service.ts";
 import { createProjectRepository } from "./projects/repository.ts";
 import { createProjectService } from "./projects/service.ts";
 
@@ -14,6 +16,10 @@ async function main(): Promise<void> {
     projects: createProjectService(projectRepository),
     characters: createCharacterService(
       createCharacterRepository(database.db),
+      projectRepository,
+    ),
+    episodes: createEpisodeService(
+      createEpisodeRepository(database.db),
       projectRepository,
     ),
   });

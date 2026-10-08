@@ -4,6 +4,9 @@ import { ZodError } from "zod";
 import { CharacterDeletionConflictError } from "./characters/repository.ts";
 import { registerCharacterRoutes } from "./characters/routes.ts";
 import type { CharacterService } from "./characters/service.ts";
+import { EpisodePositionConflictError } from "./episodes/repository.ts";
+import { registerEpisodeRoutes } from "./episodes/routes.ts";
+import type { EpisodeService } from "./episodes/service.ts";
 import { ProjectDeletionConflictError } from "./projects/repository.ts";
 import { registerProjectRoutes } from "./projects/routes.ts";
 import type { ProjectService } from "./projects/service.ts";
@@ -23,6 +26,7 @@ export function createApp(
   dependencies: {
     projects?: ProjectService;
     characters?: CharacterService;
+    episodes?: EpisodeService;
   } = {},
 ): FastifyInstance {
   const app = Fastify();
@@ -52,6 +56,7 @@ export function createApp(
     if (
       error instanceof ProjectDeletionConflictError ||
       error instanceof CharacterDeletionConflictError ||
+      error instanceof EpisodePositionConflictError ||
       statusCode === 409
     ) {
       return reply
@@ -78,5 +83,6 @@ export function createApp(
   if (dependencies.projects) registerProjectRoutes(app, dependencies.projects);
   if (dependencies.characters)
     registerCharacterRoutes(app, dependencies.characters);
+  if (dependencies.episodes) registerEpisodeRoutes(app, dependencies.episodes);
   return app;
 }

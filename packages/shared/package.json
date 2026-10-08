@@ -1,0 +1,23 @@
+{
+  "name": "@storyteller/shared",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --noEmit false",
+    "typecheck": "tsc",
+    "lint": "oxlint --deny-warnings src"
+  },
+  "dependencies": {
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@storyteller/config": "workspace:*",
+    "typescript": "5.9.3"
+  }
+}

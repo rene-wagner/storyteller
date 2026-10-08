@@ -1,11 +1,16 @@
 import type {
   Character,
+  CreateCharacterRequest,
   CreateProjectRequest,
   Episode,
   Project,
+  UpdateCharacterRequest,
   UpdateProjectRequest,
 } from "@storyteller/shared";
-import { createProjectSchema } from "@storyteller/shared";
+import {
+  createCharacterSchema,
+  createProjectSchema,
+} from "@storyteller/shared";
 import { createApiClient, ApiError } from "./api-client";
 
 const apiClient = createApiClient("/api");
@@ -64,6 +69,36 @@ export const projectsApi = {
       ),
     );
   },
+  async createCharacter(
+    projectId: string,
+    input: CreateCharacterRequest,
+  ): Promise<Character> {
+    return required(
+      await apiClient.request<Character>(
+        `/projects/${encodeURIComponent(projectId)}/characters`,
+        { method: "POST", json: input },
+      ),
+    );
+  },
+  async updateCharacter(
+    id: string,
+    input: UpdateCharacterRequest,
+  ): Promise<Character> {
+    return required(
+      await apiClient.request<Character>(
+        `/characters/${encodeURIComponent(id)}`,
+        {
+          method: "PATCH",
+          json: input,
+        },
+      ),
+    );
+  },
+  async deleteCharacter(id: string): Promise<void> {
+    await apiClient.request<void>(`/characters/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+  },
   async episodes(id: string): Promise<Episode[]> {
     return required(
       await apiClient.request<Episode[]>(
@@ -95,6 +130,27 @@ export function validateProject(input: CreateProjectRequest): {
       !errors[field]
     )
       errors[field] = `${field[0].toUpperCase()}${field.slice(1)} is required.`;
+  }
+  return { errors };
+}
+
+export type CharacterFieldErrors = Partial<
+  Record<keyof CreateCharacterRequest, string>
+>;
+
+export function validateCharacter(input: CreateCharacterRequest): {
+  value?: CreateCharacterRequest;
+  errors: CharacterFieldErrors;
+} {
+  const result = createCharacterSchema.safeParse({
+    ...input,
+    name: input.name.trim(),
+  });
+  if (result.success) return { value: result.data, errors: {} };
+  const errors: CharacterFieldErrors = {};
+  for (const issue of result.error.issues) {
+    if (issue.path[0] === "name") errors.name = "Name is required.";
+    if (issue.path[0] === "type") errors.type = "Select a character type.";
   }
   return { errors };
 }

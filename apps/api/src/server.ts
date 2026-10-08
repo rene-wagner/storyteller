@@ -1,9 +1,16 @@
 import { createApp } from "./app.ts";
 import { ConfigurationError, parseConfig } from "./config.ts";
+import { createDatabase } from "./db/connection.ts";
+import { createProjectRepository } from "./projects/repository.ts";
+import { createProjectService } from "./projects/service.ts";
 
 async function main(): Promise<void> {
   const config = parseConfig(process.env);
-  const app = createApp();
+  const database = createDatabase(config);
+  const app = createApp({
+    projects: createProjectService(createProjectRepository(database.db)),
+  });
+  app.addHook("onClose", database.close);
   try {
     await app.listen({ port: config.PORT, host: config.HOST });
   } catch {

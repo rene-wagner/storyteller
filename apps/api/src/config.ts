@@ -19,6 +19,7 @@ function isPostgresUrl(value: string): boolean {
 }
 
 const environmentSchema = z.object({
+  HOST: z.enum(["127.0.0.1", "0.0.0.0"]).default("127.0.0.1"),
   PORT: z
     .string()
     .regex(/^\d+$/)
@@ -37,6 +38,7 @@ const environmentSchema = z.object({
 export type Config = z.infer<typeof environmentSchema>;
 
 const configurationMessages = {
+  HOST: "must be 127.0.0.1 or 0.0.0.0",
   PORT: "must be an integer from 1 to 65535",
   DATABASE_URL:
     "must be a PostgreSQL URL with a host and database name (postgres:// or postgresql://)",

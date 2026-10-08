@@ -44,6 +44,7 @@ test("health returns HTTP 200 and the expected JSON without starting a listener"
 
 test("configuration requires a database URL and supplies small local defaults", () => {
   expect(parseConfig({ DATABASE_URL: databaseUrl })).toStrictEqual({
+    HOST: "127.0.0.1",
     PORT: 3000,
     DATABASE_URL: databaseUrl,
     MEDIA_STORAGE_DIRECTORY: "./media",
@@ -58,11 +59,13 @@ test.each([
 ])("configuration accepts PostgreSQL URL %s and explicit values", (url) => {
   expect(
     parseConfig({
+      HOST: "0.0.0.0",
       PORT: "65535",
       DATABASE_URL: url,
       MEDIA_STORAGE_DIRECTORY: " /tmp/storyteller-media ",
     }),
   ).toStrictEqual({
+    HOST: "0.0.0.0",
     PORT: 65535,
     DATABASE_URL: url,
     MEDIA_STORAGE_DIRECTORY: "/tmp/storyteller-media",
@@ -71,6 +74,7 @@ test.each([
 });
 
 for (const [field, values] of Object.entries({
+  HOST: ["", "localhost", "::", "private-directory"],
   PORT: ["", " ", "0", "-1", "65536", "1.5", "NaN", "3000x", "1e3", "0x10"],
   DATABASE_URL: [
     "",
@@ -144,6 +148,7 @@ function launch(script, environment) {
     cwd: apiRoot,
     env: {
       ...process.env,
+      HOST: "127.0.0.1",
       PORT: "3000",
       DATABASE_URL: databaseUrl,
       MEDIA_STORAGE_DIRECTORY: "./media",
@@ -199,6 +204,7 @@ for (const [script, signal] of [
 }
 
 test.each([
+  [{ HOST: "private-directory" }, "HOST"],
   [{ PORT: "bad" }, "PORT"],
   [{ DATABASE_URL: "" }, "DATABASE_URL"],
   [{ DATABASE_URL: undefined }, "DATABASE_URL"],
@@ -224,6 +230,20 @@ test.each([
     /private-password|private-directory|https:\/\/|\bat .*\.js:/,
   );
   await expect(fetch(`http://127.0.0.1:${port}/health`)).rejects.toThrow();
+});
+
+test("server can bind to all interfaces for containers", async () => {
+  const port = await unusedPort();
+  const { child, output, exited } = launch("start", {
+    HOST: "0.0.0.0",
+    PORT: String(port),
+  });
+  await expect
+    .poll(() => output.stdout, { timeout: 10_000 })
+    .toContain(`API listening at http://0.0.0.0:${port}`);
+  expect((await fetch(`http://127.0.0.1:${port}/health`)).status).toBe(200);
+  child.kill("SIGTERM");
+  expect(await exited).toStrictEqual({ code: 0, signal: null });
 });
 
 test("occupied port refuses startup without exposing configuration or stack traces", async () => {

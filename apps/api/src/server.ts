@@ -5,7 +5,7 @@ async function main(): Promise<void> {
   const config = parseConfig(process.env);
   const app = createApp();
   try {
-    await app.listen({ port: config.PORT, host: "127.0.0.1" });
+    await app.listen({ port: config.PORT, host: config.HOST });
   } catch {
     await app.close();
     throw new Error("API startup failed.");
@@ -28,7 +28,7 @@ async function main(): Promise<void> {
   }
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);
-  console.log(`API listening at http://127.0.0.1:${config.PORT}`);
+  console.log(`API listening at http://${config.HOST}:${config.PORT}`);
 }
 
 main().catch((error: unknown) => {

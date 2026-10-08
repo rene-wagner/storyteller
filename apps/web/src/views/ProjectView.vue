@@ -12,6 +12,7 @@ import { RouterLink, useRoute, useRouter } from "vue-router";
 import { ApiError } from "../api-client";
 import CharacterForm from "../components/CharacterForm.vue";
 import EpisodeForm from "../components/EpisodeForm.vue";
+import EpisodeScenes from "../components/EpisodeScenes.vue";
 import ProjectForm from "../components/ProjectForm.vue";
 import Accordion from "../components/ui/Accordion.vue";
 import AccordionContent from "../components/ui/AccordionContent.vue";
@@ -572,6 +573,7 @@ const remove = useMutation({
                         >Cancel</BaseButton
                       >
                     </div>
+                    <EpisodeScenes :episode-id="episode.id" />
                   </div>
                 </AccordionContent>
               </AccordionItem>

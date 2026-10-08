@@ -3,17 +3,23 @@ import type {
   CreateCharacterRequest,
   CreateEpisodeRequest,
   CreateProjectRequest,
+  CreateSceneRequest,
   Episode,
+  MediaItem,
   Project,
   ReorderEpisodesRequest,
+  ReorderScenesRequest,
+  Scene,
   UpdateCharacterRequest,
   UpdateEpisodeRequest,
   UpdateProjectRequest,
+  UpdateSceneRequest,
 } from "@storyteller/shared";
 import {
   createCharacterSchema,
   createEpisodeSchema,
   createProjectSchema,
+  createSceneSchema,
 } from "@storyteller/shared";
 import { createApiClient, ApiError } from "./api-client";
 
@@ -24,6 +30,8 @@ export const projectKeys = {
   detail: (id: string) => ["projects", id] as const,
   characters: (id: string) => ["projects", id, "characters"] as const,
   episodes: (id: string) => ["projects", id, "episodes"] as const,
+  scenes: (id: string) => ["episodes", id, "scenes"] as const,
+  backgroundMusic: ["media", "background_music"] as const,
 };
 
 function required<T>(response: T | undefined): T {
@@ -146,6 +154,51 @@ export const projectsApi = {
       { method: "PUT", json: input },
     );
   },
+  async scenes(episodeId: string): Promise<Scene[]> {
+    return required(
+      await apiClient.request<Scene[]>(
+        `/episodes/${encodeURIComponent(episodeId)}/scenes`,
+      ),
+    );
+  },
+  async backgroundMusic(): Promise<MediaItem[]> {
+    return required(
+      await apiClient.request<MediaItem[]>("/media?type=background_music"),
+    );
+  },
+  async createScene(
+    episodeId: string,
+    input: CreateSceneRequest,
+  ): Promise<Scene> {
+    return required(
+      await apiClient.request<Scene>(
+        `/episodes/${encodeURIComponent(episodeId)}/scenes`,
+        { method: "POST", json: input },
+      ),
+    );
+  },
+  async updateScene(id: string, input: UpdateSceneRequest): Promise<Scene> {
+    return required(
+      await apiClient.request<Scene>(`/scenes/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        json: input,
+      }),
+    );
+  },
+  async deleteScene(id: string): Promise<void> {
+    await apiClient.request<void>(`/scenes/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+  },
+  async reorderScenes(
+    episodeId: string,
+    input: ReorderScenesRequest,
+  ): Promise<void> {
+    await apiClient.request<void>(
+      `/episodes/${encodeURIComponent(episodeId)}/scenes/order`,
+      { method: "PUT", json: input },
+    );
+  },
 };
 
 export type ProjectFields = keyof CreateProjectRequest;
@@ -237,6 +290,52 @@ export function validateEpisode(input: CreateEpisodeRequest): {
     if (issue.path[0] === "title") errors.title = "Title is required.";
     if (issue.path[0] === "description")
       errors.description = "Description is required.";
+  }
+  return { errors };
+}
+
+export function scenesByPosition(scenes: Scene[]): Scene[] {
+  return [...scenes].sort(
+    (a, b) => a.position - b.position || a.id.localeCompare(b.id),
+  );
+}
+
+export function movedSceneIds(
+  scenes: Scene[],
+  index: number,
+  offset: -1 | 1,
+): string[] | undefined {
+  const other = index + offset;
+  if (
+    index < 0 ||
+    index >= scenes.length ||
+    other < 0 ||
+    other >= scenes.length
+  )
+    return undefined;
+  const ids = scenes.map((scene) => scene.id);
+  [ids[index], ids[other]] = [ids[other]!, ids[index]!];
+  return ids;
+}
+
+export type SceneFieldErrors = Partial<
+  Record<keyof CreateSceneRequest, string>
+>;
+
+export function validateScene(input: CreateSceneRequest): {
+  value?: CreateSceneRequest;
+  errors: SceneFieldErrors;
+} {
+  const result = createSceneSchema.safeParse({
+    ...input,
+    title: input.title.trim(),
+  });
+  if (result.success) return { value: result.data, errors: {} };
+  const errors: SceneFieldErrors = {};
+  for (const issue of result.error.issues) {
+    if (issue.path[0] === "title") errors.title = "Title is required.";
+    if (issue.path[0] === "backgroundMusicId")
+      errors.backgroundMusicId = "Select background music or none.";
   }
   return { errors };
 }

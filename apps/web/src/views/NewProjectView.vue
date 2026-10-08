@@ -1,12 +1,36 @@
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
+import { useMutation, useQueryClient } from "@tanstack/vue-query";
+import { RouterLink, useRouter } from "vue-router";
+import ProjectForm from "../components/ProjectForm.vue";
+import BaseAlert from "../components/ui/BaseAlert.vue";
+import { projectError, projectKeys, projectsApi } from "../projects";
+
+const router = useRouter();
+const queryClient = useQueryClient();
+const create = useMutation({
+  mutationFn: projectsApi.create,
+  onSuccess: async (project) => {
+    await queryClient.invalidateQueries({
+      queryKey: projectKeys.list,
+      exact: true,
+    });
+    await router.push({ name: "project", params: { projectId: project.id } });
+  },
+});
 </script>
 
 <template>
-  <section aria-labelledby="new-project-heading" class="space-y-5">
+  <section aria-labelledby="new-project-heading" class="max-w-xl space-y-5">
     <h1 id="new-project-heading" class="text-3xl font-semibold">New project</h1>
-    <p class="text-gray-700">Project creation will be available here.</p>
-    <RouterLink class="underline underline-offset-4" to="/projects"
+    <BaseAlert v-if="create.isError.value" variant="error">{{
+      projectError(create.error.value)
+    }}</BaseAlert>
+    <ProjectForm
+      submit-label="Create project"
+      :submitting="create.isPending.value"
+      @submit="create.mutate"
+    />
+    <RouterLink class="inline-block underline underline-offset-4" to="/projects"
       >Back to projects</RouterLink
     >
   </section>

@@ -7,20 +7,24 @@ import { createEpisodeRepository } from "./episodes/repository.ts";
 import { createEpisodeService } from "./episodes/service.ts";
 import { createProjectRepository } from "./projects/repository.ts";
 import { createProjectService } from "./projects/service.ts";
+import { createSceneRepository } from "./scenes/repository.ts";
+import { createSceneService } from "./scenes/service.ts";
 
 async function main(): Promise<void> {
   const config = parseConfig(process.env);
   const database = createDatabase(config);
   const projectRepository = createProjectRepository(database.db);
+  const episodeRepository = createEpisodeRepository(database.db);
   const app = createApp({
     projects: createProjectService(projectRepository),
     characters: createCharacterService(
       createCharacterRepository(database.db),
       projectRepository,
     ),
-    episodes: createEpisodeService(
-      createEpisodeRepository(database.db),
-      projectRepository,
+    episodes: createEpisodeService(episodeRepository, projectRepository),
+    scenes: createSceneService(
+      createSceneRepository(database.db),
+      episodeRepository,
     ),
   });
   app.addHook("onClose", database.close);

@@ -10,6 +10,12 @@ import type { EpisodeService } from "./episodes/service.ts";
 import { ProjectDeletionConflictError } from "./projects/repository.ts";
 import { registerProjectRoutes } from "./projects/routes.ts";
 import type { ProjectService } from "./projects/service.ts";
+import {
+  SceneBackgroundMusicError,
+  ScenePositionConflictError,
+} from "./scenes/repository.ts";
+import { registerSceneRoutes } from "./scenes/routes.ts";
+import type { SceneService } from "./scenes/service.ts";
 
 type ErrorCode =
   | "VALIDATION_ERROR"
@@ -27,6 +33,7 @@ export function createApp(
     projects?: ProjectService;
     characters?: CharacterService;
     episodes?: EpisodeService;
+    scenes?: SceneService;
   } = {},
 ): FastifyInstance {
   const app = Fastify();
@@ -38,7 +45,11 @@ export function createApp(
       typeof error.statusCode === "number"
         ? error.statusCode
         : undefined;
-    if (error instanceof ZodError || statusCode === 400) {
+    if (
+      error instanceof ZodError ||
+      error instanceof SceneBackgroundMusicError ||
+      statusCode === 400
+    ) {
       return reply
         .code(400)
         .send(
@@ -57,6 +68,7 @@ export function createApp(
       error instanceof ProjectDeletionConflictError ||
       error instanceof CharacterDeletionConflictError ||
       error instanceof EpisodePositionConflictError ||
+      error instanceof ScenePositionConflictError ||
       statusCode === 409
     ) {
       return reply
@@ -84,5 +96,6 @@ export function createApp(
   if (dependencies.characters)
     registerCharacterRoutes(app, dependencies.characters);
   if (dependencies.episodes) registerEpisodeRoutes(app, dependencies.episodes);
+  if (dependencies.scenes) registerSceneRoutes(app, dependencies.scenes);
   return app;
 }

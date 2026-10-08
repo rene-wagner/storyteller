@@ -64,6 +64,12 @@ export const createSceneSchema = z.strictObject({
   title: z.string().min(1),
   backgroundMusicId: idSchema.nullable().optional(),
 });
+export const updateSceneSchema = createSceneSchema
+  .partial()
+  .refine((input) => Object.keys(input).length > 0);
+export const reorderScenesSchema = z.strictObject({
+  sceneIds: z.array(idSchema).refine((ids) => new Set(ids).size === ids.length),
+});
 export const sceneSchema = z.strictObject({
   ...responseFields,
   episodeId: idSchema,
@@ -107,6 +113,8 @@ export type UpdateEpisodeRequest = z.infer<typeof updateEpisodeSchema>;
 export type Episode = z.infer<typeof episodeSchema>;
 export type ReorderEpisodesRequest = z.infer<typeof reorderEpisodesSchema>;
 export type CreateSceneRequest = z.infer<typeof createSceneSchema>;
+export type UpdateSceneRequest = z.infer<typeof updateSceneSchema>;
+export type ReorderScenesRequest = z.infer<typeof reorderScenesSchema>;
 export type Scene = z.infer<typeof sceneSchema>;
 export type CreateCuePointRequest = z.infer<typeof createCuePointSchema>;
 export type CuePoint = z.infer<typeof cuePointSchema>;

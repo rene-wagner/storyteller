@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import type { UpdateProjectRequest } from "@storyteller/shared";
+import type {
+  Character,
+  CreateCharacterRequest,
+  UpdateProjectRequest,
+} from "@storyteller/shared";
 import { computed, ref } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
+import { ApiError } from "../api-client";
+import CharacterForm from "../components/CharacterForm.vue";
 import ProjectForm from "../components/ProjectForm.vue";
 import BaseAlert from "../components/ui/BaseAlert.vue";
 import BaseButton from "../components/ui/BaseButton.vue";
@@ -32,6 +38,48 @@ const episodes = useQuery({
 });
 const editing = ref(false);
 const confirmingDelete = ref(false);
+const addingCharacter = ref(false);
+const editingCharacter = ref<Character | null>(null);
+const deletingCharacter = ref<Character | null>(null);
+const confirmingCharacterDelete = ref(false);
+const createCharacter = useMutation({
+  mutationFn: (input: CreateCharacterRequest) =>
+    projectsApi.createCharacter(projectId.value, input),
+  onSuccess: async (saved) => {
+    await queryClient.invalidateQueries({
+      queryKey: projectKeys.characters(saved.projectId),
+      exact: true,
+    });
+    addingCharacter.value = false;
+  },
+});
+const updateCharacter = useMutation({
+  mutationFn: ({ id, input }: { id: string; input: CreateCharacterRequest }) =>
+    projectsApi.updateCharacter(id, input),
+  onSuccess: async (saved) => {
+    await queryClient.invalidateQueries({
+      queryKey: projectKeys.characters(saved.projectId),
+      exact: true,
+    });
+    editingCharacter.value = null;
+  },
+});
+const removeCharacter = useMutation({
+  mutationFn: (id: string) => projectsApi.deleteCharacter(id),
+  onSuccess: async () => {
+    await queryClient.invalidateQueries({
+      queryKey: projectKeys.characters(projectId.value),
+      exact: true,
+    });
+    deletingCharacter.value = null;
+  },
+});
+const characterDeleteError = computed(() =>
+  removeCharacter.error.value instanceof ApiError &&
+  removeCharacter.error.value.status === 409
+    ? "This character is used by a cue point and cannot be deleted."
+    : projectError(removeCharacter.error.value),
+);
 const update = useMutation({
   mutationFn: (input: UpdateProjectRequest) =>
     projectsApi.update(projectId.value, input),
@@ -159,6 +207,53 @@ const remove = useMutation({
         <h2 id="characters-heading" class="text-xl font-semibold">
           Characters
         </h2>
+        <BaseAlert
+          v-if="
+            createCharacter.isError.value ||
+            updateCharacter.isError.value ||
+            removeCharacter.isError.value
+          "
+          variant="error"
+          >{{
+            removeCharacter.isError.value
+              ? characterDeleteError
+              : projectError(
+                  createCharacter.error.value ?? updateCharacter.error.value,
+                )
+          }}</BaseAlert
+        >
+        <template v-if="addingCharacter">
+          <h3 class="text-lg font-semibold">Add character</h3>
+          <CharacterForm
+            submit-label="Add character"
+            :submitting="createCharacter.isPending.value"
+            @submit="createCharacter.mutate"
+          />
+          <BaseButton
+            variant="secondary"
+            :disabled="createCharacter.isPending.value"
+            @click="
+              addingCharacter = false;
+              createCharacter.reset();
+            "
+            >Cancel</BaseButton
+          >
+        </template>
+        <BaseButton
+          v-else
+          variant="secondary"
+          :disabled="
+            removeCharacter.isPending.value || updateCharacter.isPending.value
+          "
+          @click="
+            addingCharacter = true;
+            editingCharacter = null;
+            createCharacter.reset();
+            updateCharacter.reset();
+            removeCharacter.reset();
+          "
+          >Add character</BaseButton
+        >
         <LoadingState
           v-if="characters.isPending.value"
           label="Loading characters…"
@@ -185,10 +280,72 @@ const remove = useMutation({
         />
         <ul
           v-else
-          class="list-inside list-disc rounded border border-gray-300 bg-white p-5"
+          class="divide-y divide-gray-200 rounded border border-gray-300 bg-white"
         >
-          <li v-for="character in characters.data.value" :key="character.id">
-            {{ character.name }} ({{ character.type }})
+          <li
+            v-for="character in characters.data.value"
+            :key="character.id"
+            class="space-y-3 p-5"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <span
+                >{{ character.name }} ({{
+                  character.type === "main" ? "Main" : "Supporting"
+                }})</span
+              >
+              <div class="flex gap-2">
+                <BaseButton
+                  variant="secondary"
+                  :disabled="
+                    removeCharacter.isPending.value ||
+                    updateCharacter.isPending.value ||
+                    createCharacter.isPending.value
+                  "
+                  @click="
+                    editingCharacter = character;
+                    addingCharacter = false;
+                    updateCharacter.reset();
+                    createCharacter.reset();
+                    removeCharacter.reset();
+                  "
+                  >Edit {{ character.name }}</BaseButton
+                >
+                <BaseButton
+                  variant="danger"
+                  :disabled="
+                    removeCharacter.isPending.value ||
+                    updateCharacter.isPending.value ||
+                    createCharacter.isPending.value
+                  "
+                  @click="
+                    deletingCharacter = character;
+                    confirmingCharacterDelete = true;
+                    removeCharacter.reset();
+                  "
+                  >Delete {{ character.name }}</BaseButton
+                >
+              </div>
+            </div>
+            <div v-if="editingCharacter?.id === character.id" class="space-y-3">
+              <CharacterForm
+                :key="character.id"
+                :initial="character"
+                submit-label="Save character"
+                :submitting="updateCharacter.isPending.value"
+                @submit="
+                  (input) => updateCharacter.mutate({ id: character.id, input })
+                "
+              />
+              <BaseButton
+                variant="secondary"
+                :disabled="updateCharacter.isPending.value"
+                @click="
+                  editingCharacter = null;
+                  updateCharacter.reset();
+                "
+                >Cancel</BaseButton
+              >
+            </div>
           </li>
         </ul>
       </section>
@@ -228,6 +385,15 @@ const remove = useMutation({
         </ol>
       </section>
     </template>
+    <ConfirmationDialog
+      v-model="confirmingCharacterDelete"
+      title="Delete character?"
+      :message="`Permanently delete ${deletingCharacter?.name ?? 'this character'}? This cannot be undone.`"
+      confirm-label="Delete character"
+      @confirm="
+        deletingCharacter && removeCharacter.mutate(deletingCharacter.id)
+      "
+    />
     <ConfirmationDialog
       v-model="confirmingDelete"
       title="Delete project?"

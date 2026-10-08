@@ -1,0 +1,12 @@
+# Use with: docker compose -f compose.yaml -f compose.watch.yaml up --build
+services:
+  api:
+    working_dir: /app/apps/api
+    command: node --watch --env-file-if-exists=.env src/server.ts
+    volumes:
+      - ./apps/api/src:/app/apps/api/src
+  web:
+    volumes:
+      - ./apps/web/src:/app/apps/web/src
+      - ./apps/web/index.html:/app/apps/web/index.html
+      - ./apps/web/vite.config.mts:/app/apps/web/vite.config.mts

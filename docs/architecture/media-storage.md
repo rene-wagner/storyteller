@@ -1,0 +1,5 @@
+# Media storage
+
+`MediaStorage` (`apps/api/src/media/storage.ts`) is the backend boundary for media bytes. `save` accepts an async iterable of byte chunks and returns an opaque storage key. `get` returns an async iterable of bytes; callers must consume it (or close the stream if they stop early). `delete` removes the bytes. Missing keys reject for both `get` and `delete`; invalid keys reject without accessing a file. Storage errors must be mapped to safe API errors by future HTTP handlers rather than sent directly to clients.
+
+`createLocalMediaStorage` (`apps/api/src/media/local-storage.ts`) uses the validated `MEDIA_STORAGE_DIRECTORY` configuration. It creates the directory on save and assigns each file an exclusive, random UUID key. Keys contain no user-provided file name or path. It removes partial files when writing fails. Business services should depend on `MediaStorage`, not the local implementation or a filesystem path. For the upload and deletion policy and API routes, see [Media API](./media-api.md).

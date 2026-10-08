@@ -134,4 +134,19 @@ export type CreateCuePointRequest = z.infer<typeof createCuePointSchema>;
 export type UpdateCuePointRequest = z.infer<typeof updateCuePointSchema>;
 export type ReorderCuePointsRequest = z.infer<typeof reorderCuePointsSchema>;
 export type CuePoint = z.infer<typeof cuePointSchema>;
+export const updateMediaSchema = z
+  .strictObject({
+    name: z.string().trim().min(1).max(255),
+  })
+  .partial()
+  .refine((input) => Object.keys(input).length > 0);
+export const listMediaSchema = z.strictObject({
+  type: mediaTypeSchema.optional(),
+});
+export const uploadMediaSchema = z.strictObject({
+  name: z.string().trim().min(1).max(255),
+  type: mediaTypeSchema,
+});
+export type UpdateMediaRequest = z.infer<typeof updateMediaSchema>;
+export type UploadMediaRequest = z.infer<typeof uploadMediaSchema>;
 export type MediaItem = z.infer<typeof mediaItemSchema>;

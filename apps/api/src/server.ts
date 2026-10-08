@@ -7,6 +7,9 @@ import { createCuePointService } from "./cue-points/service.ts";
 import { createDatabase } from "./db/connection.ts";
 import { createEpisodeRepository } from "./episodes/repository.ts";
 import { createEpisodeService } from "./episodes/service.ts";
+import { createLocalMediaStorage } from "./media/local-storage.ts";
+import { createMediaRepository } from "./media/repository.ts";
+import { createMediaService } from "./media/service.ts";
 import { createProjectRepository } from "./projects/repository.ts";
 import { createProjectService } from "./projects/service.ts";
 import { createSceneRepository } from "./scenes/repository.ts";
@@ -20,6 +23,10 @@ async function main(): Promise<void> {
   const sceneRepository = createSceneRepository(database.db);
   const app = createApp({
     projects: createProjectService(projectRepository),
+    media: createMediaService(
+      createMediaRepository(database.db),
+      createLocalMediaStorage(config),
+    ),
     characters: createCharacterService(
       createCharacterRepository(database.db),
       projectRepository,

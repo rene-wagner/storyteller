@@ -573,7 +573,10 @@ const remove = useMutation({
                         >Cancel</BaseButton
                       >
                     </div>
-                    <EpisodeScenes :episode-id="episode.id" />
+                    <EpisodeScenes
+                      :episode-id="episode.id"
+                      :project-id="projectId"
+                    />
                   </div>
                 </AccordionContent>
               </AccordionItem>

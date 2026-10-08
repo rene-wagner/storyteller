@@ -1,6 +1,8 @@
 import type {
   Character,
   CreateCharacterRequest,
+  CreateCuePointRequest,
+  CuePoint,
   CreateEpisodeRequest,
   CreateProjectRequest,
   CreateSceneRequest,
@@ -8,15 +10,18 @@ import type {
   MediaItem,
   Project,
   ReorderEpisodesRequest,
+  ReorderCuePointsRequest,
   ReorderScenesRequest,
   Scene,
   UpdateCharacterRequest,
+  UpdateCuePointRequest,
   UpdateEpisodeRequest,
   UpdateProjectRequest,
   UpdateSceneRequest,
 } from "@storyteller/shared";
 import {
   createCharacterSchema,
+  createCuePointSchema,
   createEpisodeSchema,
   createProjectSchema,
   createSceneSchema,
@@ -32,6 +37,8 @@ export const projectKeys = {
   episodes: (id: string) => ["projects", id, "episodes"] as const,
   scenes: (id: string) => ["episodes", id, "scenes"] as const,
   backgroundMusic: ["media", "background_music"] as const,
+  soundEffects: ["media", "sound_effect"] as const,
+  cuePoints: (id: string) => ["scenes", id, "cue-points"] as const,
 };
 
 function required<T>(response: T | undefined): T {
@@ -199,6 +206,57 @@ export const projectsApi = {
       { method: "PUT", json: input },
     );
   },
+  async cuePoints(sceneId: string): Promise<CuePoint[]> {
+    return required(
+      await apiClient.request<CuePoint[]>(
+        `/scenes/${encodeURIComponent(sceneId)}/cue-points`,
+      ),
+    );
+  },
+  async soundEffects(): Promise<MediaItem[]> {
+    return required(
+      await apiClient.request<MediaItem[]>("/media?type=sound_effect"),
+    );
+  },
+  async createCuePoint(
+    sceneId: string,
+    input: CreateCuePointRequest,
+  ): Promise<CuePoint> {
+    return required(
+      await apiClient.request<CuePoint>(
+        `/scenes/${encodeURIComponent(sceneId)}/cue-points`,
+        { method: "POST", json: input },
+      ),
+    );
+  },
+  async updateCuePoint(
+    id: string,
+    input: UpdateCuePointRequest,
+  ): Promise<CuePoint> {
+    return required(
+      await apiClient.request<CuePoint>(
+        `/cue-points/${encodeURIComponent(id)}`,
+        {
+          method: "PATCH",
+          json: input,
+        },
+      ),
+    );
+  },
+  async deleteCuePoint(id: string): Promise<void> {
+    await apiClient.request<void>(`/cue-points/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+  },
+  async reorderCuePoints(
+    sceneId: string,
+    input: ReorderCuePointsRequest,
+  ): Promise<void> {
+    await apiClient.request<void>(
+      `/scenes/${encodeURIComponent(sceneId)}/cue-points/order`,
+      { method: "PUT", json: input },
+    );
+  },
 };
 
 export type ProjectFields = keyof CreateProjectRequest;
@@ -336,6 +394,52 @@ export function validateScene(input: CreateSceneRequest): {
     if (issue.path[0] === "title") errors.title = "Title is required.";
     if (issue.path[0] === "backgroundMusicId")
       errors.backgroundMusicId = "Select background music or none.";
+  }
+  return { errors };
+}
+
+export function cuePointsByPosition(points: CuePoint[]): CuePoint[] {
+  return [...points].sort(
+    (a, b) => a.position - b.position || a.id.localeCompare(b.id),
+  );
+}
+
+export function movedCuePointIds(
+  points: CuePoint[],
+  index: number,
+  offset: -1 | 1,
+): string[] | undefined {
+  const other = index + offset;
+  if (
+    index < 0 ||
+    index >= points.length ||
+    other < 0 ||
+    other >= points.length
+  )
+    return undefined;
+  const ids = points.map((point) => point.id);
+  [ids[index], ids[other]] = [ids[other]!, ids[index]!];
+  return ids;
+}
+
+export type CuePointFieldErrors = Partial<
+  Record<keyof CreateCuePointRequest, string>
+>;
+
+export function validateCuePoint(input: CreateCuePointRequest): {
+  value?: CreateCuePointRequest;
+  errors: CuePointFieldErrors;
+} {
+  const result = createCuePointSchema.safeParse(input);
+  if (result.success) return { value: result.data, errors: {} };
+  const errors: CuePointFieldErrors = {};
+  for (const issue of result.error.issues) {
+    if (issue.path[0] === "characterId")
+      errors.characterId = "Select a character.";
+    if (issue.path[0] === "spokenText")
+      errors.spokenText = "Enter valid spoken text.";
+    if (issue.path[0] === "soundEffectIds")
+      errors.soundEffectIds = "Select valid sound effects.";
   }
   return { errors };
 }

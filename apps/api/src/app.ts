@@ -10,6 +10,8 @@ import type { CuePointService } from "./cue-points/service.ts";
 import { EpisodePositionConflictError } from "./episodes/repository.ts";
 import { registerEpisodeRoutes } from "./episodes/routes.ts";
 import type { EpisodeService } from "./episodes/service.ts";
+import { registerMediaRoutes } from "./media/routes.ts";
+import type { MediaService } from "./media/service.ts";
 import { ProjectDeletionConflictError } from "./projects/repository.ts";
 import { registerProjectRoutes } from "./projects/routes.ts";
 import type { ProjectService } from "./projects/service.ts";
@@ -38,6 +40,7 @@ export function createApp(
     episodes?: EpisodeService;
     scenes?: SceneService;
     cuePoints?: CuePointService;
+    media?: MediaService;
   } = {},
 ): FastifyInstance {
   const app = Fastify();
@@ -52,6 +55,9 @@ export function createApp(
     if (
       error instanceof ZodError ||
       error instanceof SceneBackgroundMusicError ||
+      (error instanceof Error &&
+        "code" in error &&
+        error.code === "FST_INVALID_JSON_FIELD_ERROR") ||
       statusCode === 400
     ) {
       return reply
@@ -104,5 +110,6 @@ export function createApp(
   if (dependencies.scenes) registerSceneRoutes(app, dependencies.scenes);
   if (dependencies.cuePoints)
     registerCuePointRoutes(app, dependencies.cuePoints);
+  if (dependencies.media) registerMediaRoutes(app, dependencies.media);
   return app;
 }

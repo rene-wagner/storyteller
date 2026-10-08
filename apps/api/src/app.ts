@@ -1,6 +1,9 @@
 import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
 import { ZodError } from "zod";
+import { CharacterDeletionConflictError } from "./characters/repository.ts";
+import { registerCharacterRoutes } from "./characters/routes.ts";
+import type { CharacterService } from "./characters/service.ts";
 import { ProjectDeletionConflictError } from "./projects/repository.ts";
 import { registerProjectRoutes } from "./projects/routes.ts";
 import type { ProjectService } from "./projects/service.ts";
@@ -17,7 +20,10 @@ function errorResponse(code: ErrorCode, message: string) {
 }
 
 export function createApp(
-  dependencies: { projects?: ProjectService } = {},
+  dependencies: {
+    projects?: ProjectService;
+    characters?: CharacterService;
+  } = {},
 ): FastifyInstance {
   const app = Fastify();
 
@@ -43,7 +49,11 @@ export function createApp(
         .code(404)
         .send(errorResponse("NOT_FOUND", "Resource not found."));
     }
-    if (error instanceof ProjectDeletionConflictError || statusCode === 409) {
+    if (
+      error instanceof ProjectDeletionConflictError ||
+      error instanceof CharacterDeletionConflictError ||
+      statusCode === 409
+    ) {
       return reply
         .code(409)
         .send(errorResponse("CONFLICT", "Resource conflict."));
@@ -66,5 +76,7 @@ export function createApp(
 
   app.get("/health", async () => ({ status: "ok" }));
   if (dependencies.projects) registerProjectRoutes(app, dependencies.projects);
+  if (dependencies.characters)
+    registerCharacterRoutes(app, dependencies.characters);
   return app;
 }

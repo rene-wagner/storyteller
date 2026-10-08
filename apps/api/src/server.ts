@@ -1,14 +1,21 @@
 import { createApp } from "./app.ts";
 import { ConfigurationError, parseConfig } from "./config.ts";
 import { createDatabase } from "./db/connection.ts";
+import { createCharacterRepository } from "./characters/repository.ts";
+import { createCharacterService } from "./characters/service.ts";
 import { createProjectRepository } from "./projects/repository.ts";
 import { createProjectService } from "./projects/service.ts";
 
 async function main(): Promise<void> {
   const config = parseConfig(process.env);
   const database = createDatabase(config);
+  const projectRepository = createProjectRepository(database.db);
   const app = createApp({
-    projects: createProjectService(createProjectRepository(database.db)),
+    projects: createProjectService(projectRepository),
+    characters: createCharacterService(
+      createCharacterRepository(database.db),
+      projectRepository,
+    ),
   });
   app.addHook("onClose", database.close);
   try {

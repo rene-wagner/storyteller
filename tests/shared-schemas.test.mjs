@@ -5,6 +5,7 @@ import {
   MEDIA_TYPES,
   characterSchema,
   createCharacterSchema,
+  updateCharacterSchema,
   createCuePointSchema,
   createEpisodeSchema,
   createProjectSchema,
@@ -128,6 +129,22 @@ test("create inputs reject invalid enum values, references and missing required 
       spokenText: "Hello",
     }).success,
   ).toBe(false);
+});
+
+test("character updates accept partial editable fields but not project reassignment", () => {
+  expect(updateCharacterSchema.parse({ name: "New" })).toEqual({ name: "New" });
+  expect(updateCharacterSchema.parse({ type: "supporting" })).toEqual({
+    type: "supporting",
+  });
+  for (const input of [
+    {},
+    { name: "" },
+    { type: "other" },
+    { projectId: id },
+    { name: "New", projectId: id },
+  ]) {
+    expect(updateCharacterSchema.safeParse(input).success).toBe(false);
+  }
 });
 
 test("ordered responses require nonnegative integer positions and scenes allow no music", () => {

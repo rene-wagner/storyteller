@@ -45,11 +45,19 @@ export const createEpisodeSchema = z.strictObject({
   title: z.string().min(1),
   description: z.string(),
 });
+export const updateEpisodeSchema = createEpisodeSchema
+  .partial()
+  .refine((input) => Object.keys(input).length > 0);
 export const episodeSchema = z.strictObject({
   ...responseFields,
   projectId: idSchema,
   position: positionSchema,
   ...createEpisodeSchema.shape,
+});
+export const reorderEpisodesSchema = z.strictObject({
+  episodeIds: z
+    .array(idSchema)
+    .refine((ids) => new Set(ids).size === ids.length),
 });
 
 export const createSceneSchema = z.strictObject({
@@ -95,7 +103,9 @@ export type CreateCharacterRequest = z.infer<typeof createCharacterSchema>;
 export type UpdateCharacterRequest = z.infer<typeof updateCharacterSchema>;
 export type Character = z.infer<typeof characterSchema>;
 export type CreateEpisodeRequest = z.infer<typeof createEpisodeSchema>;
+export type UpdateEpisodeRequest = z.infer<typeof updateEpisodeSchema>;
 export type Episode = z.infer<typeof episodeSchema>;
+export type ReorderEpisodesRequest = z.infer<typeof reorderEpisodesSchema>;
 export type CreateSceneRequest = z.infer<typeof createSceneSchema>;
 export type Scene = z.infer<typeof sceneSchema>;
 export type CreateCuePointRequest = z.infer<typeof createCuePointSchema>;

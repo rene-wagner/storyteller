@@ -74,9 +74,48 @@ database connection until a later task needs one. The database schema includes
 projects, characters, episodes, scenes, cue points, media items and media
 relations; HTTP APIs, media file operations, storage implementations and domain/UI
 features belong to later roadmap phases. Compiler output (`dist`), dependencies,
-coverage, TypeScript build information and local `.env` files are ignored;
-`.env.example` is tracked.
+coverage, TypeScript build information and private `.env.local` files are ignored.
+The root `.env` (local Docker defaults) and `apps/api/.env.example` are tracked.
 `AGENTS.md` and `docs/` are excluded from automatic formatting.
+
+## Docker Compose (local development)
+
+Docker Compose runs PostgreSQL 17, the compiled API and the Vite development
+server. Install Docker with Compose, then from the repository root:
+
+```sh
+docker compose up --build -d
+docker compose run --rm api pnpm --filter @storyteller/api db:migrate
+curl http://127.0.0.1:3000/health
+# Open http://127.0.0.1:5173 for the current frontend tooling probe.
+```
+
+The API does not connect to PostgreSQL at startup; migrations are explicit and
+must be run before using database-backed features or tests. Source changes require
+`docker compose up --build -d` again; this is not a hot-reload setup. PostgreSQL
+and future media files persist in named volumes. `docker compose down` stops the
+stack; `docker compose down -v` also **deletes** database and media data.
+Ports are published only on the host loopback interface. `DB_PORT`, `API_PORT`
+and `WEB_PORT` in the root `.env` set host ports (defaults: 5432, 3000, 5173).
+The container-side ports stay fixed. The API binds to all container interfaces
+only in Compose; outside Docker it remains loopback-only by default.
+
+The root `.env` is versioned and contains **development-only** PostgreSQL values.
+Never put real credentials there. For private overrides create `.env.local` in
+the repository root and pass both files to every Compose command, for example:
+
+```sh
+docker compose --env-file .env --env-file .env.local up --build -d
+docker compose --env-file .env --env-file .env.local run --rm api pnpm --filter @storyteller/api db:migrate
+```
+
+`.env.local` is Git-ignored and excluded from Docker builds. Set
+`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` and/or host ports there.
+Use URL-safe characters for PostgreSQL credentials: Compose constructs the
+container `DATABASE_URL` from these values. PostgreSQL initialization variables
+only take effect for a new volume; changing them on an existing volume requires
+migrating the database or deliberately removing the volume. This configuration
+is for local development, not production deployment.
 
 ## Backend setup and configuration
 
@@ -93,11 +132,12 @@ environment. Both API scripts optionally load `apps/api/.env` using Node's built
 support; existing process environment values take precedence. Without that file,
 Node may print a notice and continues with the process environment.
 
-| Variable                  | Default   | Validation                                                                                           |
-| ------------------------- | --------- | ---------------------------------------------------------------------------------------------------- |
-| `PORT`                    | `3000`    | Decimal integer from 1 to 65535; port 0 is not accepted                                              |
-| `DATABASE_URL`            | Required  | `postgres://` or `postgresql://` URL with a host and database name; an explicit port must be 1–65535 |
-| `MEDIA_STORAGE_DIRECTORY` | `./media` | Non-empty path after trimming, without NUL or line breaks                                            |
+| Variable                  | Default     | Validation                                                                                           |
+| ------------------------- | ----------- | ---------------------------------------------------------------------------------------------------- |
+| `HOST`                    | `127.0.0.1` | `127.0.0.1` or `0.0.0.0` (for containers only)                                                       |
+| `PORT`                    | `3000`      | Decimal integer from 1 to 65535; port 0 is not accepted                                              |
+| `DATABASE_URL`            | Required    | `postgres://` or `postgresql://` URL with a host and database name; an explicit port must be 1–65535 |
+| `MEDIA_STORAGE_DIRECTORY` | `./media`   | Non-empty path after trimming, without NUL or line breaks                                            |
 
 Relative media paths are relative to the API working directory (`apps/api` for
 these PNPM scripts). The directory is neither created nor accessed in Phase 2;

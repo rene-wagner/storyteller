@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "pnpm typecheck && vite build",
     "typecheck": "vue-tsc && tsc -p tsconfig.node.json",
-    "lint": "oxlint --deny-warnings src vite.config.mts"
+    "lint": "oxlint --deny-warnings src vite.config.mts vitest.config.mts"
   },
   "dependencies": {
     "@storyteller/shared": "workspace:*",
@@ -21,8 +21,11 @@
     "@tailwindcss/vite": "4.3.3",
     "@types/node": "24.19.1",
     "@vitejs/plugin-vue": "6.0.9",
+    "@vue/test-utils": "2.4.6",
+    "jsdom": "26.1.0",
     "typescript": "5.9.3",
     "vite": "8.3.3",
+    "vitest": "5.0.3",
     "vue-tsc": "3.3.12"
   }
 }

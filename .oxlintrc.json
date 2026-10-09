@@ -26,7 +26,12 @@
       }
     },
     {
-      "files": ["**/*.mjs", "apps/api/**/*.ts", "apps/web/vite.config.mts"],
+      "files": [
+        "**/*.mjs",
+        "apps/api/**/*.ts",
+        "apps/web/vite.config.mts",
+        "apps/web/vitest.config.mts"
+      ],
       "env": {
         "node": true
       }

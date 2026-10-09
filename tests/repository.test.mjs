@@ -152,7 +152,10 @@ test("Vite serves and bundles the Vue shell and tooling probe", async () => {
     expect(await main.text()).toMatch(/App\.vue/);
     const shell = await fetch(`${origin}/src/App.vue`);
     expect(shell.status).toBe(200);
-    expect(await shell.text()).toMatch(/ToolingCheck\.vue/);
+    expect(await shell.text()).toMatch(/AppShell\.vue/);
+    const appShell = await fetch(`${origin}/src/components/AppShell.vue`);
+    expect(appShell.status).toBe(200);
+    expect(await appShell.text()).toMatch(/ToolingCheck\.vue/);
     const component = await fetch(`${origin}/src/ToolingCheck.vue`);
     expect(component.status).toBe(200);
     const componentCode = await component.text();

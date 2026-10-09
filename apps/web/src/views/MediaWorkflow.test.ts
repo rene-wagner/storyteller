@@ -225,6 +225,136 @@ async function uploadFile(
 
 afterEach(() => vi.unstubAllGlobals());
 
+test("blocked media deletion identifies the project, episode, scene and cue position", async () => {
+  const originalShowModal = Object.getOwnPropertyDescriptor(
+    HTMLDialogElement.prototype,
+    "showModal",
+  );
+  const originalClose = Object.getOwnPropertyDescriptor(
+    HTMLDialogElement.prototype,
+    "close",
+  );
+  Object.defineProperty(HTMLDialogElement.prototype, "showModal", {
+    configurable: true,
+    value: function (this: HTMLDialogElement) {
+      this.open = true;
+    },
+  });
+  Object.defineProperty(HTMLDialogElement.prototype, "close", {
+    configurable: true,
+    value: function (this: HTMLDialogElement) {
+      this.open = false;
+    },
+  });
+  const media: MediaItem[] = [
+    {
+      id: musicId,
+      name: "Theme",
+      type: "background_music",
+      fileName: "theme.wav",
+      mimeType: "audio/wav",
+      fileSize: "5",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    },
+    {
+      id: effectId,
+      name: "Static",
+      type: "sound_effect",
+      fileName: "static.wav",
+      mimeType: "audio/wav",
+      fileSize: "5",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    },
+  ];
+  const requests: string[] = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      requests.push(`${init?.method ?? "GET"} ${path}`);
+      if (path === "/api/media" && !init?.method) return Response.json(media);
+      const usage = path.endsWith(musicId)
+        ? {
+            sceneIds: [sceneId],
+            cuePointIds: [],
+            scenes: [
+              {
+                id: sceneId,
+                projectTitle: "The Lighthouse",
+                episodeTitle: "Arrival",
+                sceneTitle: "At the harbor",
+              },
+            ],
+            cuePoints: [],
+          }
+        : {
+            sceneIds: [],
+            cuePointIds: [cuePointId],
+            scenes: [],
+            cuePoints: [
+              {
+                id: cuePointId,
+                projectTitle: "The Lighthouse",
+                episodeTitle: "Arrival",
+                sceneTitle: "At the harbor",
+                position: 0,
+              },
+            ],
+          };
+      return Response.json(
+        {
+          error: {
+            code: "CONFLICT",
+            message: "Media item is in use.",
+            details: [],
+            usage,
+          },
+        },
+        { status: 409 },
+      );
+    }),
+  );
+  const { default: MediaView } = await import("./MediaView.vue");
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const wrapper = mount(MediaView, {
+    global: { plugins: [[VueQueryPlugin, { queryClient }]] },
+  });
+  try {
+    await waitForUi(() => wrapper.text().includes("Delete Static"));
+    for (const [name, label] of [
+      ["Theme", "The Lighthouse / Arrival / At the harbor"],
+      ["Static", "The Lighthouse / Arrival / At the harbor / Cue 1"],
+    ]) {
+      await wrapper
+        .findAll("button")
+        .find((button) => button.text() === `Delete ${name}`)!
+        .trigger("click");
+      await wrapper.get("dialog button:last-child").trigger("click");
+      await waitForUi(() => wrapper.text().includes(label));
+      expect(wrapper.text()).toContain("Media item is in use.");
+    }
+    expect(requests.filter((request) => request.startsWith("DELETE"))).toEqual([
+      `DELETE /api/media/${musicId}`,
+      `DELETE /api/media/${effectId}`,
+    ]);
+  } finally {
+    wrapper.unmount();
+    queryClient.clear();
+    for (const [name, descriptor] of [
+      ["showModal", originalShowModal],
+      ["close", originalClose],
+    ] as const) {
+      if (descriptor)
+        Object.defineProperty(HTMLDialogElement.prototype, name, descriptor);
+      else Reflect.deleteProperty(HTMLDialogElement.prototype, name);
+    }
+  }
+});
+
 test("upload music and assign it to a scene, then upload an effect and assign it to a cue point", async () => {
   const requests = mockMediaWorkflowApi();
   await Promise.all([import("./MediaView.vue"), import("./ProjectView.vue")]);

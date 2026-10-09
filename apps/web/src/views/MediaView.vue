@@ -2,7 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import type { MediaItem, MediaType } from "@storyteller/shared";
 import { computed, ref, useId } from "vue";
-import { ApiError } from "../api-client";
+import { ApiError, type MediaUsage } from "../api-client";
 import {
   mediaApi,
   mediaKeys,
@@ -117,6 +117,18 @@ function beginDelete(item: MediaItem): void {
 }
 function mediaTypeLabel(type: MediaType): string {
   return type === "background_music" ? "Background Music" : "Sound Effect";
+}
+function sceneUsageLabel(usage: MediaUsage, id: string): string {
+  const scene = usage.scenes?.find((entry) => entry.id === id);
+  return scene
+    ? `${scene.projectTitle} / ${scene.episodeTitle} / ${scene.sceneTitle}`
+    : id;
+}
+function cuePointUsageLabel(usage: MediaUsage, id: string): string {
+  const point = usage.cuePoints?.find((entry) => entry.id === id);
+  return point
+    ? `${point.projectTitle} / ${point.episodeTitle} / ${point.sceneTitle} / Cue ${point.position + 1}`
+    : id;
 }
 </script>
 
@@ -251,14 +263,22 @@ function mediaTypeLabel(type: MediaType): string {
           >
             <p>{{ projectError(remove.error.value) }}</p>
             <template v-if="usage">
-              <p>
+              <div v-if="usage.sceneIds.length">
                 Scenes using this media:
-                {{ usage.sceneIds.join(", ") || "None" }}
-              </p>
-              <p>
+                <ul class="list-inside list-disc">
+                  <li v-for="id in usage.sceneIds" :key="id">
+                    {{ sceneUsageLabel(usage, id) }}
+                  </li>
+                </ul>
+              </div>
+              <div v-if="usage.cuePointIds.length">
                 Cue points using this media:
-                {{ usage.cuePointIds.join(", ") || "None" }}
-              </p>
+                <ul class="list-inside list-disc">
+                  <li v-for="id in usage.cuePointIds" :key="id">
+                    {{ cuePointUsageLabel(usage, id) }}
+                  </li>
+                </ul>
+              </div>
             </template>
           </BaseAlert>
         </li>

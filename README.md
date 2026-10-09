@@ -29,7 +29,7 @@ native Android arm64 support.
 | `pnpm build`        | Compile the API and typecheck/bundle the Vue frontend via recursive PNPM     |
 | `pnpm lint`         | Lint both apps via recursive PNPM, then lint root tests and check formatting |
 | `pnpm typecheck`    | Check both apps via recursive PNPM, including Vue single-file components     |
-| `pnpm test`         | Run repository and backend-foundation tests once using Vitest                |
+| `pnpm test`         | Run repository, backend and frontend tests once using Vitest                 |
 | `pnpm format:check` | Check formatting without changing files                                      |
 | `pnpm format`       | Format owned source and configuration files                                  |
 | `pnpm validate`     | Run lint, typecheck, tests and build in that order; stop on failure          |
@@ -52,8 +52,9 @@ native Android arm64 support.
   (including rejected invalid types and isolated Node/browser globals), Vue/TS
   script lint rules, formatting/ignore-policy checks and Vite development/build
   smoke tests.
-- `vitest.config.mjs`: Vitest configuration for root repository tests in the
-  Node environment, with a 30-second per-test timeout for tooling smoke tests.
+- `vitest.config.mjs`: Vitest projects for root/backend tests in Node and
+  `apps/web/vitest.config.mts` for frontend Vue tests in jsdom, with a 30-second
+  per-test timeout.
 
 Vite is used where browser bundling is needed. The Node API retains `tsc`, and
 `packages/config` distributes JSON configuration directly without a build step.
@@ -273,12 +274,14 @@ their formatting exclusions.
 ## Tests
 
 Vitest replaces Node's built-in test runner. `pnpm test` runs the existing
-`tests/**/*.test.mjs` suite once; use `pnpm exec vitest` for watch mode or
-`pnpm exec vitest run tests/repository.test.mjs` for the specific test file.
-Tests use Vitest's `expect` assertions (`toStrictEqual` for strict deep
-comparisons) and `onTestFinished` for temporary-directory cleanup. Node APIs and
-child processes remain available; no browser/DOM test environment is needed for
-these repository checks.
+`tests/**/*.test.mjs` suite in Node and `apps/web/src/**/*.test.ts` in jsdom.
+Use `pnpm exec vitest` for watch mode or
+`pnpm exec vitest run apps/web/src/test-infrastructure.test.ts` for a specific
+frontend test file.
+Frontend tests can mount Vue single-file components with `@vue/test-utils` and
+use Vitest mocks for API behavior. Repository tests use Vitest's `expect`
+assertions (`toStrictEqual` for strict deep comparisons) and `onTestFinished`
+for temporary-directory cleanup; Node APIs and child processes remain available.
 
 `tests/api.test.mjs` covers the health response, valid/invalid configuration,
 refused startup (including an occupied port), actual local development/compiled

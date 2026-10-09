@@ -105,7 +105,7 @@ test("workspace packages and root commands form a private monorepo", () => {
     );
     expect(appPackage.scripts.lint).toBe(
       app === "web"
-        ? "oxlint --deny-warnings src vite.config.mts"
+        ? "oxlint --deny-warnings src vite.config.mts vitest.config.mts"
         : "oxlint --deny-warnings src drizzle.config.ts",
     );
     expect(appPackage.scripts.typecheck).toBe(

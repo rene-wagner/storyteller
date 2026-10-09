@@ -9,6 +9,7 @@
     "lint": "oxlint --deny-warnings src vite.config.mts vitest.config.mts"
   },
   "dependencies": {
+    "@lucide/vue": "1.53.0",
     "@storyteller/shared": "workspace:*",
     "@tanstack/vue-query": "5.104.1",
     "pinia": "4.0.3",

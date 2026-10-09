@@ -114,6 +114,13 @@ test("workspace packages and root commands form a private monorepo", () => {
   }
 });
 
+test("Docker builds API workspace dependencies before the API", () => {
+  const dockerfile = readFileSync(path.join(root, "Dockerfile"), "utf8");
+  expect(dockerfile).toContain(
+    "pnpm install --frozen-lockfile && pnpm --filter @storyteller/api... build",
+  );
+});
+
 test("Vite serves and bundles the Vue shell and tooling probe", async () => {
   const webRoot = path.join(root, "apps/web");
   const pkg = readJson("apps/web/package.json");

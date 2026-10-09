@@ -324,18 +324,18 @@ test("blocked media deletion identifies the project, episode, scene and cue posi
     global: { plugins: [[VueQueryPlugin, { queryClient }]] },
   });
   try {
-    await waitForUi(() => wrapper.text().includes("Delete Static"));
-    for (const [name, label] of [
-      ["Theme", "The Lighthouse / Arrival / At the harbor"],
-      ["Static", "The Lighthouse / Arrival / At the harbor / Cue 1"],
+    await waitForUi(() => wrapper.text().includes("Static"));
+    for (const label of [
+      "The Lighthouse / Arrival / At the harbor",
+      "The Lighthouse / Arrival / At the harbor / Cue 1",
     ]) {
       await wrapper
         .findAll("button")
-        .find((button) => button.text() === `Delete ${name}`)!
+        .find((button) => button.text() === "Delete")!
         .trigger("click");
       await wrapper.get("dialog button:last-child").trigger("click");
-      await waitForUi(() => wrapper.text().includes(label));
-      expect(wrapper.text()).toContain("Media item is in use.");
+      await waitForUi(() => wrapper.text().includes("Media item is in use."));
+      expect(wrapper.text()).toContain(label);
     }
     expect(requests.filter((request) => request.startsWith("DELETE"))).toEqual([
       `DELETE /api/media/${musicId}`,
@@ -386,7 +386,7 @@ test("upload music and assign it to a scene, then upload an effect and assign it
     await waitForUi(() => wrapper.text().includes("Background music: None"));
     await wrapper
       .findAll("button")
-      .find((button) => button.text() === "Edit At the harbor")!
+      .find((button) => button.text() === "Edit")!
       .trigger("click");
     await waitForUi(() =>
       formFor(wrapper, "Save scene")

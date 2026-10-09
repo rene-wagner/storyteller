@@ -73,8 +73,8 @@ test("media library renders upload, filters, metadata and edit/delete actions", 
   expect(html).toContain("Theme");
   expect(html).toContain("theme.mp3");
   expect(html).toContain("Created:");
-  expect(html).toContain("Edit Theme");
-  expect(html).toContain("Delete Theme");
+  expect(html).toContain(">Edit</button>");
+  expect(html).toContain(">Delete</button>");
 });
 
 test("media library renders loading and empty states", async () => {

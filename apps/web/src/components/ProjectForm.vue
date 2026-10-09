@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Plus, Save } from "@lucide/vue";
 import type { CreateProjectRequest } from "@storyteller/shared";
 import { reactive, ref } from "vue";
 import { validateProject, type ProjectFieldErrors } from "../projects";
@@ -69,8 +70,11 @@ function submit(): void {
         />
       </template>
     </FormField>
-    <BaseButton type="submit" :disabled="submitting">{{
-      submitting ? "Saving…" : submitLabel
-    }}</BaseButton>
+    <BaseButton
+      type="submit"
+      :icon="initial ? Save : Plus"
+      :disabled="submitting"
+      >{{ submitting ? "Saving…" : submitLabel }}</BaseButton
+    >
   </form>
 </template>

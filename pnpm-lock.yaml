@@ -218,6 +218,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@lucide/vue':
+        specifier: 1.53.0
+        version: 1.53.0(vue@3.5.43(typescript@5.9.3))
       '@storyteller/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -834,6 +837,11 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@lucide/vue@1.53.0':
+    resolution: {integrity: sha512-WtBYxiwNVd9yP/UKeMbxAntZqrd50pWxhkXrxxOcYJc4XhsO0pkKbUed+sEh08C1u07zj5I3Rz6AU1v9wHEDqA==}
+    peerDependencies:
+      vue: '>=3.0.1'
 
   '@one-ini/wasm@0.1.1':
     resolution: {integrity: sha512-XuySG1E38YScSJoMlqovLru4KTUNSjgVTIjyh7qMX6aNN5HY5Ct5LhRJdxO79JtTzKfzV/bnWpz+zquYrISsvw==}
@@ -2825,6 +2833,10 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
+
+  '@lucide/vue@1.53.0(vue@3.5.43(typescript@5.9.3))':
+    dependencies:
+      vue: 3.5.43(typescript@5.9.3)
 
   '@one-ini/wasm@0.1.1': {}
 

@@ -1,4 +1,13 @@
 <script setup lang="ts">
+import {
+  Plus,
+  ArrowUp,
+  ArrowDown,
+  Pencil,
+  Trash2,
+  PanelsTopLeft,
+  Music,
+} from "@lucide/vue";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import type { CreateSceneRequest, Scene } from "@storyteller/shared";
 import { computed, ref } from "vue";
@@ -100,8 +109,16 @@ function moveScene(index: number, offset: -1 | 1): void {
 </script>
 
 <template>
-  <section class="space-y-3" aria-label="Scenes">
-    <h3 class="text-lg font-semibold">Scenes</h3>
+  <section class="space-y-3 pt-6" aria-label="Scenes">
+    <h3 class="flex items-center gap-2 text-lg font-semibold">
+      <PanelsTopLeft
+        :size="20"
+        aria-hidden="true"
+        focusable="false"
+        class="shrink-0"
+      />
+      Scenes
+    </h3>
     <template v-if="adding">
       <h4 class="font-semibold">Add scene</h4>
       <LoadingState
@@ -137,6 +154,7 @@ function moveScene(index: number, offset: -1 | 1): void {
       >
     </template>
     <BaseButton
+      :icon="Plus"
       v-else
       variant="secondary"
       :disabled="busy"
@@ -177,6 +195,12 @@ function moveScene(index: number, offset: -1 | 1): void {
             <AccordionContent>
               <div class="space-y-3">
                 <p>
+                  <Music
+                    :size="18"
+                    aria-hidden="true"
+                    focusable="false"
+                    class="inline-block shrink-0 align-text-bottom"
+                  />
                   Background music:
                   {{
                     availableMusic.find(
@@ -187,18 +211,21 @@ function moveScene(index: number, offset: -1 | 1): void {
                 </p>
                 <div class="flex flex-wrap gap-2">
                   <BaseButton
+                    :icon="ArrowUp"
                     variant="secondary"
                     :disabled="busy || index === 0"
                     @click="moveScene(index, -1)"
                     >Move {{ scene.title }} up</BaseButton
                   >
                   <BaseButton
+                    :icon="ArrowDown"
                     variant="secondary"
                     :disabled="busy || index === orderedScenes.length - 1"
                     @click="moveScene(index, 1)"
                     >Move {{ scene.title }} down</BaseButton
                   >
                   <BaseButton
+                    :icon="Pencil"
                     variant="secondary"
                     :disabled="busy"
                     @click="
@@ -212,6 +239,7 @@ function moveScene(index: number, offset: -1 | 1): void {
                     >Edit {{ scene.title }}</BaseButton
                   >
                   <BaseButton
+                    :icon="Trash2"
                     variant="danger"
                     :disabled="busy"
                     @click="
@@ -269,6 +297,7 @@ function moveScene(index: number, offset: -1 | 1): void {
       </ol>
     </Accordion>
     <ConfirmationDialog
+      :confirm-icon="Trash2"
       v-model="confirmingDelete"
       title="Delete scene?"
       :message="`Permanently delete ${deleting?.title ?? 'this scene'} and its contents? This cannot be undone.`"

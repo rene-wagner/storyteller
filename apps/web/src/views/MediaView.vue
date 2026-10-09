@@ -1,4 +1,13 @@
 <script setup lang="ts">
+import {
+  Upload,
+  Pencil,
+  Trash2,
+  Save,
+  Library,
+  Music,
+  AudioLines,
+} from "@lucide/vue";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import type { MediaItem, MediaType } from "@storyteller/shared";
 import { computed, ref, useId } from "vue";
@@ -134,9 +143,28 @@ function cuePointUsageLabel(usage: MediaUsage, id: string): string {
 
 <template>
   <section aria-labelledby="media-heading" class="space-y-6">
-    <h1 id="media-heading" class="text-3xl font-semibold">Media Library</h1>
+    <h1
+      id="media-heading"
+      class="flex items-center gap-2 text-3xl font-semibold"
+    >
+      <Library
+        :size="20"
+        aria-hidden="true"
+        focusable="false"
+        class="shrink-0"
+      />
+      Media Library
+    </h1>
     <section aria-label="Upload media" class="space-y-3">
-      <h2 class="text-xl font-semibold">Upload media</h2>
+      <h2 class="flex items-center gap-2 text-xl font-semibold">
+        <Upload
+          :size="20"
+          aria-hidden="true"
+          focusable="false"
+          class="shrink-0"
+        />
+        Upload media
+      </h2>
       <form class="space-y-4" novalidate @submit.prevent="submitUpload">
         <FormField label="Media name" :for-id="`${fieldId}-name`">
           <TextInput :id="`${fieldId}-name`" v-model="name" :disabled="busy" />
@@ -161,7 +189,7 @@ function cuePointUsageLabel(usage: MediaUsage, id: string): string {
         <BaseAlert v-if="uploadError" variant="error">{{
           uploadError
         }}</BaseAlert>
-        <BaseButton type="submit" :disabled="busy">{{
+        <BaseButton :icon="Upload" type="submit" :disabled="busy">{{
           upload.isPending.value ? "Uploading…" : "Upload media"
         }}</BaseButton>
       </form>
@@ -201,18 +229,28 @@ function cuePointUsageLabel(usage: MediaUsage, id: string): string {
           :key="item.id"
           class="space-y-2 py-4"
         >
-          <h2 class="text-lg font-semibold">{{ item.name }}</h2>
+          <h2 class="flex items-center gap-2 text-lg font-semibold">
+            <component
+              :is="item.type === 'background_music' ? Music : AudioLines"
+              :size="20"
+              aria-hidden="true"
+              focusable="false"
+              class="shrink-0"
+            />{{ item.name }}
+          </h2>
           <p>Type: {{ mediaTypeLabel(item.type) }}</p>
           <p>File: {{ item.fileName }}</p>
           <p>Created: {{ new Date(item.createdAt).toLocaleDateString() }}</p>
           <div class="flex gap-2">
             <BaseButton
+              :icon="Pencil"
               variant="secondary"
               :disabled="busy"
               @click="beginEdit(item)"
               >Edit</BaseButton
             >
             <BaseButton
+              :icon="Trash2"
               variant="danger"
               :disabled="busy"
               @click="beginDelete(item)"
@@ -241,7 +279,9 @@ function cuePointUsageLabel(usage: MediaUsage, id: string): string {
               </template>
             </FormField>
             <div class="flex gap-2">
-              <BaseButton type="submit" :disabled="busy">Save name</BaseButton>
+              <BaseButton :icon="Save" type="submit" :disabled="busy"
+                >Save name</BaseButton
+              >
               <BaseButton
                 variant="secondary"
                 :disabled="busy"
@@ -285,6 +325,7 @@ function cuePointUsageLabel(usage: MediaUsage, id: string): string {
       </ul>
     </section>
     <ConfirmationDialog
+      :confirm-icon="Trash2"
       v-model="confirmingDelete"
       title="Delete media?"
       :message="`Permanently delete ${deleting?.name ?? 'this media item'}? This cannot be undone.`"

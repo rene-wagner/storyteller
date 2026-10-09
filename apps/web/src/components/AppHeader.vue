@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Menu } from "@lucide/vue";
 import { ref } from "vue";
 import { RouterLink } from "vue-router";
 import { useSidebarStore } from "../sidebar";
@@ -21,7 +22,7 @@ defineExpose({ focusMenu: () => menuButton.value?.focus() });
         :aria-expanded="sidebar.isSidebarOpen"
         @click="sidebar.openSidebar()"
       >
-        Menu
+        <Menu :size="24" aria-hidden="true" focusable="false" />
       </button>
       <RouterLink
         class="text-xl font-semibold"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Folder, Library, X } from "@lucide/vue";
 import { ref } from "vue";
 import { RouterLink } from "vue-router";
 import { useSidebarStore } from "../sidebar";
@@ -23,23 +24,35 @@ defineExpose({ focusClose: () => closeButton.value?.focus() });
         aria-label="Close navigation menu"
         @click="sidebar.closeSidebar()"
       >
-        Close
+        <X :size="24" aria-hidden="true" focusable="false" />
       </button>
     </div>
     <nav aria-label="Primary navigation" class="flex flex-col gap-2 p-6">
       <RouterLink
-        class="rounded px-2 py-1 text-gray-700 hover:text-black focus-visible:outline-2 focus-visible:outline-black"
+        class="inline-flex items-center gap-2 rounded px-2 py-1 text-gray-700 hover:text-black focus-visible:outline-2 focus-visible:outline-black"
         active-class="font-semibold text-black"
         to="/projects"
         @click="sidebar.closeSidebar()"
-        >Projects</RouterLink
+        ><Folder
+          :size="20"
+          aria-hidden="true"
+          focusable="false"
+          class="shrink-0"
+        />
+        Projects</RouterLink
       >
       <RouterLink
-        class="rounded px-2 py-1 text-gray-700 hover:text-black focus-visible:outline-2 focus-visible:outline-black"
+        class="inline-flex items-center gap-2 rounded px-2 py-1 text-gray-700 hover:text-black focus-visible:outline-2 focus-visible:outline-black"
         active-class="font-semibold text-black"
         to="/media"
         @click="sidebar.closeSidebar()"
-        >Media Library</RouterLink
+        ><Library
+          :size="20"
+          aria-hidden="true"
+          focusable="false"
+          class="shrink-0"
+        />
+        Media Library</RouterLink
       >
     </nav>
   </aside>

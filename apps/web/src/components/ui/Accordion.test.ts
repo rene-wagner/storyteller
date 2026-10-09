@@ -34,6 +34,10 @@ test("accordion summaries toggle their own content", async () => {
   expect(items[1]?.element.open).toBe(true);
   expect(items[0]?.get("summary").text()).toContain("First");
   expect(items[1]?.text()).toContain("Second content");
+  const chevron = wrapper.get("summary svg");
+  expect(chevron.classes()).toContain("lucide-chevron-down");
+  expect(chevron.attributes("aria-hidden")).toBe("true");
+  expect(chevron.attributes("focusable")).toBe("false");
 
   await items[0]?.get("summary").trigger("click");
   expect(items[0]?.element.open).toBe(true);

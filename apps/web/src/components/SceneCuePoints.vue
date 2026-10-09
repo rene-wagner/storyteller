@@ -1,4 +1,13 @@
 <script setup lang="ts">
+import {
+  Plus,
+  ArrowUp,
+  ArrowDown,
+  Pencil,
+  Trash2,
+  ListOrdered,
+  AudioLines,
+} from "@lucide/vue";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import type { CreateCuePointRequest, CuePoint } from "@storyteller/shared";
 import { computed, ref } from "vue";
@@ -101,8 +110,16 @@ function movePoint(index: number, offset: -1 | 1): void {
 </script>
 
 <template>
-  <section class="space-y-3" aria-label="Cue points">
-    <h4 class="font-semibold">Cue points</h4>
+  <section class="space-y-3 pt-6" aria-label="Cue points">
+    <h4 class="flex items-center gap-2 font-semibold">
+      <ListOrdered
+        :size="20"
+        aria-hidden="true"
+        focusable="false"
+        class="shrink-0"
+      />
+      Cue points
+    </h4>
     <template v-if="adding">
       <h5 class="font-semibold">Add cue point</h5>
       <LoadingState
@@ -146,6 +163,7 @@ function movePoint(index: number, offset: -1 | 1): void {
       >
     </template>
     <BaseButton
+      :icon="Plus"
       v-else
       variant="secondary"
       :disabled="busy"
@@ -192,6 +210,12 @@ function movePoint(index: number, offset: -1 | 1): void {
         </p>
         <p class="whitespace-pre-wrap">{{ point.spokenText }}</p>
         <p>
+          <AudioLines
+            :size="18"
+            aria-hidden="true"
+            focusable="false"
+            class="inline-block shrink-0 align-text-bottom"
+          />
           Sound effects:
           {{
             point.soundEffectIds
@@ -205,18 +229,21 @@ function movePoint(index: number, offset: -1 | 1): void {
         </p>
         <div class="flex flex-wrap gap-2">
           <BaseButton
+            :icon="ArrowUp"
             variant="secondary"
             :disabled="busy || index === 0"
             @click="movePoint(index, -1)"
             >Move cue point {{ index + 1 }} up</BaseButton
           >
           <BaseButton
+            :icon="ArrowDown"
             variant="secondary"
             :disabled="busy || index === orderedPoints.length - 1"
             @click="movePoint(index, 1)"
             >Move cue point {{ index + 1 }} down</BaseButton
           >
           <BaseButton
+            :icon="Pencil"
             variant="secondary"
             :disabled="busy"
             @click="
@@ -230,6 +257,7 @@ function movePoint(index: number, offset: -1 | 1): void {
             >Edit cue point {{ index + 1 }}</BaseButton
           >
           <BaseButton
+            :icon="Trash2"
             variant="danger"
             :disabled="busy"
             @click="
@@ -288,6 +316,7 @@ function movePoint(index: number, offset: -1 | 1): void {
       </li>
     </ol>
     <ConfirmationDialog
+      :confirm-icon="Trash2"
       v-model="confirmingDelete"
       title="Delete cue point?"
       message="Permanently delete this cue point? This cannot be undone."

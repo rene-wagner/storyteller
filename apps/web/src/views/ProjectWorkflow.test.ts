@@ -267,6 +267,32 @@ test("create project, character, episode, scene and cue point through the routed
     await waitForUi(() => wrapper.text().includes("Is anyone there?"));
     expect(wrapper.findAll("details")[1]!.text()).toContain("1. Mara");
     expect(wrapper.text()).not.toContain("No cue points");
+    for (const [selector, icon] of [
+      ["#project-heading", "folder"],
+      ["#characters-heading", "users"],
+      ["#episodes-heading", "clapperboard"],
+      ['section[aria-label="Scenes"] h3', "panels-top-left"],
+      ['section[aria-label="Cue points"] h4', "list-ordered"],
+    ]) {
+      expect(wrapper.get(`${selector} svg`).classes()).toContain(
+        `lucide-${icon}`,
+      );
+    }
+    expect(wrapper.find("svg.lucide-user-round").exists()).toBe(true);
+    expect(wrapper.find("svg.lucide-music").exists()).toBe(true);
+    expect(wrapper.find("svg.lucide-audio-lines").exists()).toBe(true);
+    for (const [label, icon] of [
+      ["Add character", "plus"],
+      ["Edit project", "pencil"],
+      ["Delete project", "trash-2"],
+      ["Move Arrival up", "arrow-up"],
+      ["Move Arrival down", "arrow-down"],
+    ]) {
+      const button = wrapper
+        .findAll("button")
+        .find((item) => item.text() === label);
+      expect(button?.get("svg").classes()).toContain(`lucide-${icon}`);
+    }
 
     expect(requests.filter((request) => request.method === "POST")).toEqual([
       {

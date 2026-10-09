@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, useId, watch } from "vue";
+import { onMounted, ref, useId, watch, type Component } from "vue";
 import BaseButton from "./BaseButton.vue";
 
 withDefaults(
@@ -8,6 +8,7 @@ withDefaults(
     message: string;
     confirmLabel?: string;
     cancelLabel?: string;
+    confirmIcon?: Component;
   }>(),
   { confirmLabel: "Confirm", cancelLabel: "Cancel" },
 );
@@ -47,7 +48,7 @@ function confirm(): void {
       <BaseButton variant="secondary" @click="open = false">{{
         cancelLabel
       }}</BaseButton>
-      <BaseButton variant="danger" @click="confirm">{{
+      <BaseButton variant="danger" :icon="confirmIcon" @click="confirm">{{
         confirmLabel
       }}</BaseButton>
     </div>

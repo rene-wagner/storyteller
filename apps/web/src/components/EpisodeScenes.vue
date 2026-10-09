@@ -15,7 +15,6 @@ import Accordion from "./ui/Accordion.vue";
 import AccordionContent from "./ui/AccordionContent.vue";
 import AccordionHeader from "./ui/AccordionHeader.vue";
 import AccordionItem from "./ui/AccordionItem.vue";
-import BaseAlert from "./ui/BaseAlert.vue";
 import BaseButton from "./ui/BaseButton.vue";
 import ConfirmationDialog from "./ui/ConfirmationDialog.vue";
 import EmptyState from "./ui/EmptyState.vue";
@@ -41,6 +40,7 @@ const availableMusic = computed(() =>
   (music.data.value ?? []).filter((item) => item.type === "background_music"),
 );
 const create = useMutation({
+  meta: { successMessage: "Scene created." },
   mutationFn: (input: CreateSceneRequest) =>
     projectsApi.createScene(props.episodeId, input),
   onSuccess: async (saved) => {
@@ -52,6 +52,7 @@ const create = useMutation({
   },
 });
 const update = useMutation({
+  meta: { successMessage: "Scene updated." },
   mutationFn: ({ id, input }: { id: string; input: CreateSceneRequest }) =>
     projectsApi.updateScene(id, input),
   onSuccess: async (saved) => {
@@ -63,6 +64,7 @@ const update = useMutation({
   },
 });
 const remove = useMutation({
+  meta: { successMessage: "Scene deleted." },
   mutationFn: (id: string) => projectsApi.deleteScene(id),
   onSuccess: async () => {
     await queryClient.invalidateQueries({
@@ -73,6 +75,7 @@ const remove = useMutation({
   },
 });
 const reorder = useMutation({
+  meta: { successMessage: "Scene order updated." },
   mutationFn: (sceneIds: string[]) =>
     projectsApi.reorderScenes(props.episodeId, { sceneIds }),
   onSuccess: async () => {
@@ -99,23 +102,6 @@ function moveScene(index: number, offset: -1 | 1): void {
 <template>
   <section class="space-y-3" aria-label="Scenes">
     <h3 class="text-lg font-semibold">Scenes</h3>
-    <BaseAlert
-      v-if="
-        create.isError.value ||
-        update.isError.value ||
-        remove.isError.value ||
-        reorder.isError.value
-      "
-      variant="error"
-      >{{
-        projectError(
-          create.error.value ??
-            update.error.value ??
-            remove.error.value ??
-            reorder.error.value,
-        )
-      }}</BaseAlert
-    >
     <template v-if="adding">
       <h4 class="font-semibold">Add scene</h4>
       <LoadingState

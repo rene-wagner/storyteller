@@ -58,6 +58,7 @@ const editingEpisode = ref<Episode | null>(null);
 const deletingEpisode = ref<Episode | null>(null);
 const confirmingEpisodeDelete = ref(false);
 const createEpisode = useMutation({
+  meta: { successMessage: "Episode created." },
   mutationFn: (input: CreateEpisodeRequest) =>
     projectsApi.createEpisode(projectId.value, input),
   onSuccess: async (saved) => {
@@ -69,6 +70,7 @@ const createEpisode = useMutation({
   },
 });
 const updateEpisode = useMutation({
+  meta: { successMessage: "Episode updated." },
   mutationFn: ({ id, input }: { id: string; input: CreateEpisodeRequest }) =>
     projectsApi.updateEpisode(id, input),
   onSuccess: async (saved) => {
@@ -80,6 +82,7 @@ const updateEpisode = useMutation({
   },
 });
 const removeEpisode = useMutation({
+  meta: { successMessage: "Episode deleted." },
   mutationFn: (id: string) => projectsApi.deleteEpisode(id),
   onSuccess: async () => {
     await queryClient.invalidateQueries({
@@ -90,6 +93,7 @@ const removeEpisode = useMutation({
   },
 });
 const reorderEpisodes = useMutation({
+  meta: { successMessage: "Episode order updated." },
   mutationFn: (episodeIds: string[]) =>
     projectsApi.reorderEpisodes(projectId.value, { episodeIds }),
   onSuccess: async () => {
@@ -118,6 +122,7 @@ const editingCharacter = ref<Character | null>(null);
 const deletingCharacter = ref<Character | null>(null);
 const confirmingCharacterDelete = ref(false);
 const createCharacter = useMutation({
+  meta: { successMessage: "Character created." },
   mutationFn: (input: CreateCharacterRequest) =>
     projectsApi.createCharacter(projectId.value, input),
   onSuccess: async (saved) => {
@@ -129,6 +134,7 @@ const createCharacter = useMutation({
   },
 });
 const updateCharacter = useMutation({
+  meta: { successMessage: "Character updated." },
   mutationFn: ({ id, input }: { id: string; input: CreateCharacterRequest }) =>
     projectsApi.updateCharacter(id, input),
   onSuccess: async (saved) => {
@@ -140,6 +146,7 @@ const updateCharacter = useMutation({
   },
 });
 const removeCharacter = useMutation({
+  meta: { successMessage: "Character deleted.", contextualConflict: true },
   mutationFn: (id: string) => projectsApi.deleteCharacter(id),
   onSuccess: async () => {
     await queryClient.invalidateQueries({
@@ -149,13 +156,8 @@ const removeCharacter = useMutation({
     deletingCharacter.value = null;
   },
 });
-const characterDeleteError = computed(() =>
-  removeCharacter.error.value instanceof ApiError &&
-  removeCharacter.error.value.status === 409
-    ? "This character is used by a cue point and cannot be deleted."
-    : projectError(removeCharacter.error.value),
-);
 const update = useMutation({
+  meta: { successMessage: "Project updated." },
   mutationFn: (input: UpdateProjectRequest) =>
     projectsApi.update(projectId.value, input),
   onSuccess: async (saved) => {
@@ -168,6 +170,7 @@ const update = useMutation({
   },
 });
 const remove = useMutation({
+  meta: { successMessage: "Project deleted." },
   mutationFn: () => projectsApi.delete(projectId.value),
   onSuccess: async () => {
     queryClient.removeQueries({
@@ -204,11 +207,6 @@ const remove = useMutation({
       <h1 id="project-heading" class="text-3xl font-semibold">
         {{ project.data.value.title }}
       </h1>
-      <BaseAlert
-        v-if="update.isError.value || remove.isError.value"
-        variant="error"
-        >{{ projectError(update.error.value ?? remove.error.value) }}</BaseAlert
-      >
       <template v-if="editing">
         <h2 class="text-xl font-semibold">Edit project</h2>
         <ProjectForm
@@ -284,18 +282,12 @@ const remove = useMutation({
         </h2>
         <BaseAlert
           v-if="
-            createCharacter.isError.value ||
-            updateCharacter.isError.value ||
-            removeCharacter.isError.value
+            removeCharacter.error.value instanceof ApiError &&
+            removeCharacter.error.value.status === 409
           "
           variant="error"
-          >{{
-            removeCharacter.isError.value
-              ? characterDeleteError
-              : projectError(
-                  createCharacter.error.value ?? updateCharacter.error.value,
-                )
-          }}</BaseAlert
+          >This character is used by a cue point and cannot be
+          deleted.</BaseAlert
         >
         <template v-if="addingCharacter">
           <h3 class="text-lg font-semibold">Add character</h3>
@@ -426,23 +418,6 @@ const remove = useMutation({
       </section>
       <section aria-labelledby="episodes-heading" class="space-y-3">
         <h2 id="episodes-heading" class="text-xl font-semibold">Episodes</h2>
-        <BaseAlert
-          v-if="
-            createEpisode.isError.value ||
-            updateEpisode.isError.value ||
-            removeEpisode.isError.value ||
-            reorderEpisodes.isError.value
-          "
-          variant="error"
-          >{{
-            projectError(
-              createEpisode.error.value ??
-                updateEpisode.error.value ??
-                removeEpisode.error.value ??
-                reorderEpisodes.error.value,
-            )
-          }}</BaseAlert
-        >
         <template v-if="addingEpisode">
           <h3 class="text-lg font-semibold">Add episode</h3>
           <EpisodeForm

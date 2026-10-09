@@ -43,6 +43,7 @@ async function refreshMedia(): Promise<void> {
   await queryClient.invalidateQueries({ queryKey: mediaKeys.all });
 }
 const upload = useMutation({
+  meta: { successMessage: "Media uploaded." },
   mutationFn: (input: { name: string; type: MediaType; file: File }) =>
     mediaApi.upload({ name: input.name, type: input.type }, input.file),
   onSuccess: async () => {
@@ -53,6 +54,7 @@ const upload = useMutation({
   },
 });
 const update = useMutation({
+  meta: { successMessage: "Media updated." },
   mutationFn: (input: { id: string; name: string }) =>
     mediaApi.updateName(input.id, input.name),
   onSuccess: async () => {
@@ -61,6 +63,7 @@ const update = useMutation({
   },
 });
 const remove = useMutation({
+  meta: { successMessage: "Media deleted.", contextualConflict: true },
   mutationFn: (id: string) => mediaApi.delete(id),
   onSuccess: async () => {
     await refreshMedia();
@@ -122,9 +125,6 @@ function mediaTypeLabel(type: MediaType): string {
     <h1 id="media-heading" class="text-3xl font-semibold">Media Library</h1>
     <section aria-label="Upload media" class="space-y-3">
       <h2 class="text-xl font-semibold">Upload media</h2>
-      <BaseAlert v-if="upload.isError.value" variant="error">{{
-        projectError(upload.error.value)
-      }}</BaseAlert>
       <form class="space-y-4" novalidate @submit.prevent="submitUpload">
         <FormField label="Media name" :for-id="`${fieldId}-name`">
           <TextInput :id="`${fieldId}-name`" v-model="name" :disabled="busy" />
@@ -177,7 +177,11 @@ function mediaTypeLabel(type: MediaType): string {
       <EmptyState
         v-else-if="!items.data.value?.length"
         title="No media items"
-        message="No media items match this filter."
+        :message="
+          filter === 'all'
+            ? 'Upload an audio file to get started.'
+            : 'No media items match this filter.'
+        "
       />
       <ul v-else class="divide-y divide-gray-200">
         <li
@@ -224,9 +228,6 @@ function mediaTypeLabel(type: MediaType): string {
                 />
               </template>
             </FormField>
-            <BaseAlert v-if="update.isError.value" variant="error">{{
-              projectError(update.error.value)
-            }}</BaseAlert>
             <div class="flex gap-2">
               <BaseButton type="submit" :disabled="busy">Save name</BaseButton>
               <BaseButton
@@ -241,7 +242,11 @@ function mediaTypeLabel(type: MediaType): string {
             </div>
           </form>
           <BaseAlert
-            v-if="deletionErrorId === item.id && remove.isError.value"
+            v-if="
+              deletionErrorId === item.id &&
+              remove.error.value instanceof ApiError &&
+              remove.error.value.status === 409
+            "
             variant="error"
           >
             <p>{{ projectError(remove.error.value) }}</p>

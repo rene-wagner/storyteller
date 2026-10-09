@@ -1,7 +1,13 @@
+export interface MediaUsage {
+  sceneIds: string[];
+  cuePointIds: string[];
+}
+
 export interface ApiErrorBody {
   code: string;
   message: string;
   details: unknown[];
+  usage?: unknown;
 }
 
 export class ApiError extends Error {
@@ -10,6 +16,7 @@ export class ApiError extends Error {
     readonly code: string,
     message: string,
     readonly details: unknown[] = [],
+    readonly usage?: MediaUsage,
   ) {
     super(message);
     this.name = "ApiError";
@@ -29,6 +36,18 @@ function isApiErrorBody(value: unknown): value is { error: ApiErrorBody } {
     typeof error.message === "string" &&
     "details" in error &&
     Array.isArray(error.details)
+  );
+}
+
+function isMediaUsage(value: unknown): value is MediaUsage {
+  if (typeof value !== "object" || value === null) return false;
+  return (
+    "sceneIds" in value &&
+    Array.isArray(value.sceneIds) &&
+    value.sceneIds.every((id) => typeof id === "string") &&
+    "cuePointIds" in value &&
+    Array.isArray(value.cuePointIds) &&
+    value.cuePointIds.every((id) => typeof id === "string")
   );
 }
 
@@ -71,8 +90,16 @@ export function createApiClient(baseUrl = "") {
 
     if (!response.ok) {
       if (isApiErrorBody(data)) {
-        const { code, message, details } = data.error;
-        throw new ApiError(response.status, code, message, details);
+        const { code, message, details, usage } = data.error;
+        throw new ApiError(
+          response.status,
+          code,
+          message,
+          details,
+          response.status === 409 && code === "CONFLICT" && isMediaUsage(usage)
+            ? usage
+            : undefined,
+        );
       }
       throw new ApiError(
         response.status,

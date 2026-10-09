@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Folder } from "@lucide/vue";
 import { useMutation, useQueryClient } from "@tanstack/vue-query";
 import { RouterLink, useRouter } from "vue-router";
 import ProjectForm from "../components/ProjectForm.vue";
@@ -21,7 +22,18 @@ const create = useMutation({
 
 <template>
   <section aria-labelledby="new-project-heading" class="max-w-xl space-y-5">
-    <h1 id="new-project-heading" class="text-3xl font-semibold">New project</h1>
+    <h1
+      id="new-project-heading"
+      class="flex items-center gap-2 text-3xl font-semibold"
+    >
+      <Folder
+        :size="20"
+        aria-hidden="true"
+        focusable="false"
+        class="shrink-0"
+      />
+      New project
+    </h1>
     <ProjectForm
       submit-label="Create project"
       :submitting="create.isPending.value"

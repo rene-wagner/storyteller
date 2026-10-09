@@ -1,4 +1,15 @@
 <script setup lang="ts">
+import {
+  Pencil,
+  Trash2,
+  Plus,
+  ArrowUp,
+  ArrowDown,
+  Folder,
+  Users,
+  Clapperboard,
+  UserRound,
+} from "@lucide/vue";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import type {
   Character,
@@ -204,7 +215,16 @@ const remove = useMutation({
       >
     </ErrorState>
     <template v-else-if="project.data.value">
-      <h1 id="project-heading" class="text-3xl font-semibold">
+      <h1
+        id="project-heading"
+        class="flex items-center gap-2 text-3xl font-semibold"
+      >
+        <Folder
+          :size="20"
+          aria-hidden="true"
+          focusable="false"
+          class="shrink-0"
+        />
         {{ project.data.value.title }}
       </h1>
       <template v-if="editing">
@@ -257,6 +277,7 @@ const remove = useMutation({
         </dl>
         <div class="flex gap-3">
           <BaseButton
+            :icon="Pencil"
             variant="secondary"
             :disabled="remove.isPending.value"
             @click="
@@ -266,6 +287,7 @@ const remove = useMutation({
             >Edit project</BaseButton
           >
           <BaseButton
+            :icon="Trash2"
             variant="danger"
             :disabled="remove.isPending.value"
             @click="
@@ -276,8 +298,17 @@ const remove = useMutation({
           >
         </div>
       </template>
-      <section aria-labelledby="characters-heading" class="space-y-3">
-        <h2 id="characters-heading" class="text-xl font-semibold">
+      <section aria-labelledby="characters-heading" class="space-y-3 pt-6">
+        <h2
+          id="characters-heading"
+          class="flex items-center gap-2 text-xl font-semibold"
+        >
+          <Users
+            :size="20"
+            aria-hidden="true"
+            focusable="false"
+            class="shrink-0"
+          />
           Characters
         </h2>
         <BaseAlert
@@ -307,6 +338,7 @@ const remove = useMutation({
           >
         </template>
         <BaseButton
+          :icon="Plus"
           v-else
           variant="secondary"
           :disabled="
@@ -356,12 +388,20 @@ const remove = useMutation({
           >
             <div class="flex flex-wrap items-center justify-between gap-3">
               <span
-                >{{ character.name }} ({{
+                ><UserRound
+                  :size="18"
+                  aria-hidden="true"
+                  focusable="false"
+                  class="inline-block shrink-0 align-text-bottom"
+                  v-if="character.type === 'main'"
+                />
+                {{ character.name }} ({{
                   character.type === "main" ? "Main" : "Supporting"
                 }})</span
               >
               <div class="flex gap-2">
                 <BaseButton
+                  :icon="Pencil"
                   variant="secondary"
                   :disabled="
                     removeCharacter.isPending.value ||
@@ -378,6 +418,7 @@ const remove = useMutation({
                   >Edit</BaseButton
                 >
                 <BaseButton
+                  :icon="Trash2"
                   variant="danger"
                   :disabled="
                     removeCharacter.isPending.value ||
@@ -416,8 +457,19 @@ const remove = useMutation({
           </li>
         </ul>
       </section>
-      <section aria-labelledby="episodes-heading" class="space-y-3">
-        <h2 id="episodes-heading" class="text-xl font-semibold">Episodes</h2>
+      <section aria-labelledby="episodes-heading" class="space-y-3 pt-6">
+        <h2
+          id="episodes-heading"
+          class="flex items-center gap-2 text-xl font-semibold"
+        >
+          <Clapperboard
+            :size="20"
+            aria-hidden="true"
+            focusable="false"
+            class="shrink-0"
+          />
+          Episodes
+        </h2>
         <template v-if="addingEpisode">
           <h3 class="text-lg font-semibold">Add episode</h3>
           <EpisodeForm
@@ -436,6 +488,7 @@ const remove = useMutation({
           >
         </template>
         <BaseButton
+          :icon="Plus"
           v-else
           variant="secondary"
           :disabled="episodeBusy"
@@ -487,12 +540,14 @@ const remove = useMutation({
                     </p>
                     <div class="flex flex-wrap gap-2">
                       <BaseButton
+                        :icon="ArrowUp"
                         variant="secondary"
                         :disabled="episodeBusy || index === 0"
                         @click="moveEpisode(index, -1)"
                         >Move {{ episode.title }} up</BaseButton
                       >
                       <BaseButton
+                        :icon="ArrowDown"
                         variant="secondary"
                         :disabled="
                           episodeBusy || index === orderedEpisodes.length - 1
@@ -501,6 +556,7 @@ const remove = useMutation({
                         >Move {{ episode.title }} down</BaseButton
                       >
                       <BaseButton
+                        :icon="Pencil"
                         variant="secondary"
                         :disabled="episodeBusy"
                         @click="
@@ -514,6 +570,7 @@ const remove = useMutation({
                         >Edit {{ episode.title }}</BaseButton
                       >
                       <BaseButton
+                        :icon="Trash2"
                         variant="danger"
                         :disabled="episodeBusy"
                         @click="
@@ -561,6 +618,7 @@ const remove = useMutation({
       </section>
     </template>
     <ConfirmationDialog
+      :confirm-icon="Trash2"
       v-model="confirmingEpisodeDelete"
       title="Delete episode?"
       :message="`Permanently delete ${deletingEpisode?.title ?? 'this episode'} and its contents? This cannot be undone.`"
@@ -568,6 +626,7 @@ const remove = useMutation({
       @confirm="deletingEpisode && removeEpisode.mutate(deletingEpisode.id)"
     />
     <ConfirmationDialog
+      :confirm-icon="Trash2"
       v-model="confirmingCharacterDelete"
       title="Delete character?"
       :message="`Permanently delete ${deletingCharacter?.name ?? 'this character'}? This cannot be undone.`"
@@ -577,6 +636,7 @@ const remove = useMutation({
       "
     />
     <ConfirmationDialog
+      :confirm-icon="Trash2"
       v-model="confirmingDelete"
       title="Delete project?"
       message="This will permanently delete the project and all its contents, including characters and episodes. This cannot be undone."

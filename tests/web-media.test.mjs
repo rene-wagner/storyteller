@@ -8,6 +8,7 @@ const requireFromWeb = createRequire(
 const { createServer } = requireFromWeb("vite");
 const { createSSRApp, h } = requireFromWeb("vue");
 const { renderToString } = requireFromWeb("vue/server-renderer");
+const { JSDOM } = requireFromWeb("jsdom");
 const { QueryClient, VueQueryPlugin } = requireFromWeb("@tanstack/vue-query");
 const originalFetch = globalThis.fetch;
 let server;
@@ -73,8 +74,20 @@ test("media library renders upload, filters, metadata and edit/delete actions", 
   expect(html).toContain("Theme");
   expect(html).toContain("theme.mp3");
   expect(html).toContain("Created:");
-  expect(html).toContain(">Edit</button>");
-  expect(html).toContain(">Delete</button>");
+  const dom = new JSDOM(html);
+  const buttons = [...dom.window.document.querySelectorAll("button")];
+  for (const [label, icon] of [
+    ["Upload media", "upload"],
+    ["Edit", "pencil"],
+    ["Delete", "trash-2"],
+  ]) {
+    const button = buttons.find((item) => item.textContent.trim() === label);
+    expect(button).toBeDefined();
+    const svg = button.querySelector(`svg.lucide-${icon}`);
+    expect(svg).not.toBeNull();
+    expect(svg.getAttribute("aria-hidden")).toBe("true");
+  }
+  dom.window.close();
 });
 
 test("media library renders loading and empty states", async () => {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Plus, Save } from "@lucide/vue";
 import type { CreateSceneRequest, MediaItem } from "@storyteller/shared";
 import { ref, useId } from "vue";
 import { validateScene, type SceneFieldErrors } from "../projects";
@@ -74,8 +75,11 @@ function submit(): void {
         </SelectInput>
       </template>
     </FormField>
-    <BaseButton type="submit" :disabled="submitting">{{
-      submitting ? "Saving…" : submitLabel
-    }}</BaseButton>
+    <BaseButton
+      type="submit"
+      :icon="initial ? Save : Plus"
+      :disabled="submitting"
+      >{{ submitting ? "Saving…" : submitLabel }}</BaseButton
+    >
   </form>
 </template>

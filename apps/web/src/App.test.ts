@@ -40,6 +40,18 @@ test("mobile menu opens, traps focus and closes with Escape", async () => {
   expect(sidebar.isSidebarOpen).toBe(false);
   expect(menu.attributes("aria-expanded")).toBe("false");
   expect(panel.classes()).toContain("hidden");
+  const close = wrapper.get('button[aria-label="Close navigation menu"]');
+  expect(menu.attributes("aria-label")).toBe("Open navigation menu");
+  for (const [button, icon] of [
+    [menu, "menu"],
+    [close, "x"],
+  ] as const) {
+    expect(button.text()).toBe("");
+    const svg = button.get("svg");
+    expect(svg.classes()).toContain(`lucide-${icon}`);
+    expect(svg.attributes("aria-hidden")).toBe("true");
+    expect(svg.attributes("focusable")).toBe("false");
+  }
 
   await menu.trigger("click");
   await flushPromises();
@@ -121,6 +133,21 @@ test("desktop resize keeps navigation visible independently of mobile state", as
     wrapper.get('button[aria-controls="app-sidebar"]').classes(),
   ).toContain("md:hidden");
   expect(wrapper.get("main").text()).toContain("Home view");
+});
+
+test("sidebar links pair their labels with decorative resource icons", async () => {
+  const { wrapper } = await setup();
+  for (const [path, label, icon] of [
+    ["/projects", "Projects", "folder"],
+    ["/media", "Media Library", "library"],
+  ]) {
+    const link = wrapper.get(`nav a[href="${path}"]`);
+    expect(link.text()).toBe(label);
+    const svg = link.get("svg");
+    expect(svg.classes()).toContain(`lucide-${icon}`);
+    expect(svg.attributes("aria-hidden")).toBe("true");
+    expect(svg.attributes("focusable")).toBe("false");
+  }
 });
 
 test("sidebar store provides open, close and toggle actions", () => {

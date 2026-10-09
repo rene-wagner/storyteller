@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Plus, Save, AudioLines } from "@lucide/vue";
 import type {
   Character,
   CreateCuePointRequest,
@@ -107,7 +108,15 @@ function submit(): void {
         errors.soundEffectIds ? `${fieldId}-effects-error` : undefined
       "
     >
-      <legend class="font-medium">Sound effects</legend>
+      <legend class="font-medium">
+        <AudioLines
+          :size="18"
+          aria-hidden="true"
+          focusable="false"
+          class="inline-block shrink-0 align-text-bottom"
+        />
+        Sound effects
+      </legend>
       <p
         v-if="
           !effects.filter((effect) => effect.type === 'sound_effect').length
@@ -134,8 +143,11 @@ function submit(): void {
         >{{ errors.soundEffectIds }}</ValidationMessage
       >
     </fieldset>
-    <BaseButton type="submit" :disabled="submitting">{{
-      submitting ? "Saving…" : submitLabel
-    }}</BaseButton>
+    <BaseButton
+      type="submit"
+      :icon="initial ? Save : Plus"
+      :disabled="submitting"
+      >{{ submitting ? "Saving…" : submitLabel }}</BaseButton
+    >
   </form>
 </template>

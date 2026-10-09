@@ -131,8 +131,39 @@ test.skipIf(!process.env.DATABASE_URL)(
       .insert(cuePointSoundEffects)
       .values({ cuePointId: point.id, mediaItemId: effect.id });
     for (const [item, usage] of [
-      [music, { sceneIds: [scene.id], cuePointIds: [] }],
-      [effect, { sceneIds: [], cuePointIds: [point.id] }],
+      [
+        music,
+        {
+          sceneIds: [scene.id],
+          cuePointIds: [],
+          scenes: [
+            {
+              id: scene.id,
+              projectTitle: "Pilot",
+              episodeTitle: "One",
+              sceneTitle: "Scene",
+            },
+          ],
+          cuePoints: [],
+        },
+      ],
+      [
+        effect,
+        {
+          sceneIds: [],
+          cuePointIds: [point.id],
+          scenes: [],
+          cuePoints: [
+            {
+              id: point.id,
+              projectTitle: "Pilot",
+              episodeTitle: "One",
+              sceneTitle: "Scene",
+              position: 0,
+            },
+          ],
+        },
+      ],
     ]) {
       const response = await app.inject({
         method: "DELETE",

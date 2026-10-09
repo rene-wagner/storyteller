@@ -188,8 +188,39 @@ test.skipIf(!process.env.TEST_DATABASE_URL)(
     });
     const rows = await db.select().from(mediaItems);
     for (const [item, usage] of [
-      [music, { sceneIds: [scene.id], cuePointIds: [] }],
-      [effect, { sceneIds: [], cuePointIds: [point.id] }],
+      [
+        music,
+        {
+          sceneIds: [scene.id],
+          cuePointIds: [],
+          scenes: [
+            {
+              id: scene.id,
+              projectTitle: "Pilot",
+              episodeTitle: "First",
+              sceneTitle: "Opening",
+            },
+          ],
+          cuePoints: [],
+        },
+      ],
+      [
+        effect,
+        {
+          sceneIds: [],
+          cuePointIds: [point.id],
+          scenes: [],
+          cuePoints: [
+            {
+              id: point.id,
+              projectTitle: "Pilot",
+              episodeTitle: "First",
+              sceneTitle: "Opening",
+              position: 0,
+            },
+          ],
+        },
+      ],
     ]) {
       const blocked = await app.inject({
         method: "DELETE",

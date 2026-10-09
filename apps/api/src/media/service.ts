@@ -4,7 +4,7 @@ import type {
   UpdateMediaRequest,
   UploadMediaRequest,
 } from "@storyteller/shared";
-import type { MediaRepository, MediaRow } from "./repository.ts";
+import type { MediaRepository, MediaRow, MediaUsage } from "./repository.ts";
 import type { MediaStorage } from "./storage.ts";
 
 function toMediaItem(row: MediaRow): MediaItem {
@@ -74,9 +74,7 @@ export function createMediaService(
     async delete(
       id: string,
     ): Promise<
-      | "not_found"
-      | { kind: "in_use"; usage: { sceneIds: string[]; cuePointIds: string[] } }
-      | "deleted"
+      "not_found" | { kind: "in_use"; usage: MediaUsage } | "deleted"
     > {
       const result = await repository.delete(id);
       if (result.kind === "not_found") return "not_found";

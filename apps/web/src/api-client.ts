@@ -1,6 +1,19 @@
 export interface MediaUsage {
   sceneIds: string[];
   cuePointIds: string[];
+  scenes?: {
+    id: string;
+    projectTitle: string;
+    episodeTitle: string;
+    sceneTitle: string;
+  }[];
+  cuePoints?: {
+    id: string;
+    projectTitle: string;
+    episodeTitle: string;
+    sceneTitle: string;
+    position: number;
+  }[];
 }
 
 export interface ApiErrorBody {
@@ -47,7 +60,39 @@ function isMediaUsage(value: unknown): value is MediaUsage {
     value.sceneIds.every((id) => typeof id === "string") &&
     "cuePointIds" in value &&
     Array.isArray(value.cuePointIds) &&
-    value.cuePointIds.every((id) => typeof id === "string")
+    value.cuePointIds.every((id) => typeof id === "string") &&
+    (!("scenes" in value) ||
+      (Array.isArray(value.scenes) && value.scenes.every(isSceneUsage))) &&
+    (!("cuePoints" in value) ||
+      (Array.isArray(value.cuePoints) &&
+        value.cuePoints.every(isCuePointUsage)))
+  );
+}
+
+function isSceneUsage(value: unknown): boolean {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "id" in value &&
+    typeof value.id === "string" &&
+    "projectTitle" in value &&
+    typeof value.projectTitle === "string" &&
+    "episodeTitle" in value &&
+    typeof value.episodeTitle === "string" &&
+    "sceneTitle" in value &&
+    typeof value.sceneTitle === "string"
+  );
+}
+
+function isCuePointUsage(value: unknown): boolean {
+  return (
+    isSceneUsage(value) &&
+    typeof value === "object" &&
+    value !== null &&
+    "position" in value &&
+    typeof value.position === "number" &&
+    Number.isInteger(value.position) &&
+    value.position >= 0
   );
 }
 

@@ -1,11 +1,34 @@
 import { asc, DrizzleQueryError, eq } from "drizzle-orm";
 import type { MediaType, UpdateMediaRequest } from "@storyteller/shared";
 import type { createDatabase } from "../db/connection.ts";
-import { cuePointSoundEffects, mediaItems, scenes } from "../db/schema.ts";
+import {
+  cuePoints,
+  cuePointSoundEffects,
+  episodes,
+  mediaItems,
+  projects,
+  scenes,
+} from "../db/schema.ts";
 
 type Database = ReturnType<typeof createDatabase>["db"];
 export type MediaRow = typeof mediaItems.$inferSelect;
-export type MediaUsage = { sceneIds: string[]; cuePointIds: string[] };
+export type MediaUsage = {
+  sceneIds: string[];
+  cuePointIds: string[];
+  scenes: {
+    id: string;
+    projectTitle: string;
+    episodeTitle: string;
+    sceneTitle: string;
+  }[];
+  cuePoints: {
+    id: string;
+    projectTitle: string;
+    episodeTitle: string;
+    sceneTitle: string;
+    position: number;
+  }[];
+};
 
 function isReferenceConflict(error: unknown): boolean {
   return (
@@ -23,19 +46,38 @@ export function createMediaRepository(db: Database) {
   ): Promise<MediaUsage> {
     const [sceneRows, pointRows] = await Promise.all([
       executor
-        .select({ id: scenes.id })
+        .select({
+          id: scenes.id,
+          projectTitle: projects.title,
+          episodeTitle: episodes.title,
+          sceneTitle: scenes.title,
+        })
         .from(scenes)
+        .innerJoin(episodes, eq(scenes.episodeId, episodes.id))
+        .innerJoin(projects, eq(episodes.projectId, projects.id))
         .where(eq(scenes.backgroundMusicId, id))
         .orderBy(asc(scenes.id)),
       executor
-        .select({ id: cuePointSoundEffects.cuePointId })
+        .select({
+          id: cuePoints.id,
+          projectTitle: projects.title,
+          episodeTitle: episodes.title,
+          sceneTitle: scenes.title,
+          position: cuePoints.position,
+        })
         .from(cuePointSoundEffects)
+        .innerJoin(cuePoints, eq(cuePointSoundEffects.cuePointId, cuePoints.id))
+        .innerJoin(scenes, eq(cuePoints.sceneId, scenes.id))
+        .innerJoin(episodes, eq(scenes.episodeId, episodes.id))
+        .innerJoin(projects, eq(episodes.projectId, projects.id))
         .where(eq(cuePointSoundEffects.mediaItemId, id))
-        .orderBy(asc(cuePointSoundEffects.cuePointId)),
+        .orderBy(asc(cuePoints.id)),
     ]);
     return {
       sceneIds: sceneRows.map((row) => row.id),
       cuePointIds: pointRows.map((row) => row.id),
+      scenes: sceneRows,
+      cuePoints: pointRows,
     };
   }
   return {

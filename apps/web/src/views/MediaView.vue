@@ -210,13 +210,13 @@ function cuePointUsageLabel(usage: MediaUsage, id: string): string {
               variant="secondary"
               :disabled="busy"
               @click="beginEdit(item)"
-              >Edit {{ item.name }}</BaseButton
+              >Edit</BaseButton
             >
             <BaseButton
               variant="danger"
               :disabled="busy"
               @click="beginDelete(item)"
-              >Delete {{ item.name }}</BaseButton
+              >Delete</BaseButton
             >
           </div>
           <form

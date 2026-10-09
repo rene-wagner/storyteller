@@ -375,7 +375,7 @@ const remove = useMutation({
                     createCharacter.reset();
                     removeCharacter.reset();
                   "
-                  >Edit {{ character.name }}</BaseButton
+                  >Edit</BaseButton
                 >
                 <BaseButton
                   variant="danger"
@@ -389,7 +389,7 @@ const remove = useMutation({
                     confirmingCharacterDelete = true;
                     removeCharacter.reset();
                   "
-                  >Delete {{ character.name }}</BaseButton
+                  >Delete</BaseButton
                 >
               </div>
             </div>

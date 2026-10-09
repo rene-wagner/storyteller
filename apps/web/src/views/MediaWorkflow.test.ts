@@ -196,10 +196,14 @@ async function waitForUi(condition: () => boolean): Promise<void> {
   throw new Error("Expected UI state did not appear");
 }
 
-function formFor(wrapper: VueWrapper, label: string) {
-  const form = wrapper
+function findForm(wrapper: VueWrapper, label: string) {
+  return wrapper
     .findAll("form")
     .find((item) => item.find('button[type="submit"]').text() === label);
+}
+
+function formFor(wrapper: VueWrapper, label: string) {
+  const form = findForm(wrapper, label);
   if (!form) throw new Error(`Missing form: ${label}`);
   return form;
 }
@@ -325,17 +329,21 @@ test("blocked media deletion identifies the project, episode, scene and cue posi
   });
   try {
     await waitForUi(() => wrapper.text().includes("Static"));
-    for (const label of [
-      "The Lighthouse / Arrival / At the harbor",
-      "The Lighthouse / Arrival / At the harbor / Cue 1",
+    for (const [fileName, label] of [
+      ["theme.wav", "The Lighthouse / Arrival / At the harbor"],
+      ["static.wav", "The Lighthouse / Arrival / At the harbor / Cue 1"],
     ]) {
-      await wrapper
+      const item = wrapper
+        .findAll("li")
+        .find((entry) => entry.text().includes(`File: ${fileName}`))!;
+      await item
         .findAll("button")
         .find((button) => button.text() === "Delete")!
         .trigger("click");
-      await wrapper.get("dialog button:last-child").trigger("click");
-      await waitForUi(() => wrapper.text().includes("Media item is in use."));
-      expect(wrapper.text()).toContain(label);
+      await wrapper.get("dialog[open] button:last-child").trigger("click");
+      await waitForUi(() => wrapper.text().includes(label));
+      expect(item.text()).toContain("Media item is in use.");
+      expect(item.text()).toContain(label);
     }
     expect(requests.filter((request) => request.startsWith("DELETE"))).toEqual([
       `DELETE /api/media/${musicId}`,
@@ -385,14 +393,16 @@ test("upload music and assign it to a scene, then upload an effect and assign it
     await wrapper.findAll("details")[1]!.get("summary").trigger("click");
     await waitForUi(() => wrapper.text().includes("Background music: None"));
     await wrapper
+      .findAll("details")[1]!
       .findAll("button")
-      .find((button) => button.text() === "Edit")!
+      .find((button) => button.text() === "Edit At the harbor")!
       .trigger("click");
-    await waitForUi(() =>
-      formFor(wrapper, "Save scene")
-        .get("select")
-        .text()
-        .includes("Harbor ambience"),
+    await waitForUi(
+      () =>
+        findForm(wrapper, "Save scene")
+          ?.find("select")
+          .text()
+          .includes("Harbor ambience") ?? false,
     );
     const sceneForm = formFor(wrapper, "Save scene");
     await sceneForm.get("select").setValue(musicId);
@@ -420,8 +430,10 @@ test("upload music and assign it to a scene, then upload an effect and assign it
       .findAll("button")
       .find((button) => button.text() === "Edit cue point 1")!
       .trigger("click");
-    await waitForUi(() =>
-      formFor(wrapper, "Save cue point").text().includes("Harbor bell"),
+    await waitForUi(
+      () =>
+        findForm(wrapper, "Save cue point")?.text().includes("Harbor bell") ??
+        false,
     );
     const cueForm = formFor(wrapper, "Save cue point");
     await cueForm.get('input[type="checkbox"]').setValue(true);

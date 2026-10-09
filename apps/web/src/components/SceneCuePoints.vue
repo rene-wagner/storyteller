@@ -10,7 +10,6 @@ import {
   projectsApi,
 } from "../projects";
 import CuePointForm from "./CuePointForm.vue";
-import BaseAlert from "./ui/BaseAlert.vue";
 import BaseButton from "./ui/BaseButton.vue";
 import ConfirmationDialog from "./ui/ConfirmationDialog.vue";
 import EmptyState from "./ui/EmptyState.vue";
@@ -42,6 +41,7 @@ const editing = ref<CuePoint | null>(null);
 const deleting = ref<CuePoint | null>(null);
 const confirmingDelete = ref(false);
 const create = useMutation({
+  meta: { successMessage: "Cue point created." },
   mutationFn: (input: CreateCuePointRequest) =>
     projectsApi.createCuePoint(props.sceneId, input),
   onSuccess: async (saved) => {
@@ -53,6 +53,7 @@ const create = useMutation({
   },
 });
 const update = useMutation({
+  meta: { successMessage: "Cue point updated." },
   mutationFn: ({ id, input }: { id: string; input: CreateCuePointRequest }) =>
     projectsApi.updateCuePoint(id, input),
   onSuccess: async (saved) => {
@@ -64,6 +65,7 @@ const update = useMutation({
   },
 });
 const remove = useMutation({
+  meta: { successMessage: "Cue point deleted." },
   mutationFn: (id: string) => projectsApi.deleteCuePoint(id),
   onSuccess: async () => {
     await queryClient.invalidateQueries({
@@ -74,6 +76,7 @@ const remove = useMutation({
   },
 });
 const reorder = useMutation({
+  meta: { successMessage: "Cue point order updated." },
   mutationFn: (cuePointIds: string[]) =>
     projectsApi.reorderCuePoints(props.sceneId, { cuePointIds }),
   onSuccess: async () => {
@@ -100,23 +103,6 @@ function movePoint(index: number, offset: -1 | 1): void {
 <template>
   <section class="space-y-3" aria-label="Cue points">
     <h4 class="font-semibold">Cue points</h4>
-    <BaseAlert
-      v-if="
-        create.isError.value ||
-        update.isError.value ||
-        remove.isError.value ||
-        reorder.isError.value
-      "
-      variant="error"
-      >{{
-        projectError(
-          create.error.value ??
-            update.error.value ??
-            remove.error.value ??
-            reorder.error.value,
-        )
-      }}</BaseAlert
-    >
     <template v-if="adding">
       <h5 class="font-semibold">Add cue point</h5>
       <LoadingState

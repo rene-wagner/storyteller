@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from "vue-router";
 import ToolingCheck from "./ToolingCheck.vue";
+import FeedbackNotices from "./components/ui/FeedbackNotices.vue";
 </script>
 
 <template>
@@ -28,6 +29,7 @@ import ToolingCheck from "./ToolingCheck.vue";
         </nav>
       </div>
     </header>
+    <FeedbackNotices />
     <main class="mx-auto max-w-5xl px-6 py-10">
       <RouterView />
     </main>

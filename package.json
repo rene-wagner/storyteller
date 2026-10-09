@@ -13,6 +13,7 @@
     "lint": "pnpm -r lint && pnpm lint:root && pnpm format:check",
     "typecheck": "pnpm -r typecheck",
     "test": "vitest run",
+    "test:backend": "vitest run tests/backend",
     "validate": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "lint:root": "oxlint --deny-warnings tests vitest.config.mjs",
     "format": "oxfmt --write .",

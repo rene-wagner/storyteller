@@ -6,6 +6,12 @@ services:
     volumes:
       - ./apps/api/src:/app/apps/api/src
   web:
+    environment:
+      __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS: omarchy
+    # Expose the unauthenticated dev UI only on a trusted LAN; API and DB stay loopback-only.
+    # !override replaces the base port mapping (requires Docker Compose 2.24.4+).
+    ports: !override
+      - "0.0.0.0:${WEB_PORT:-5173}:5173"
     volumes:
       - ./apps/web/src:/app/apps/web/src
       - ./apps/web/index.html:/app/apps/web/index.html

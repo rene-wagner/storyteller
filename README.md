@@ -68,8 +68,11 @@ pnpm --filter @storyteller/web dev
 pnpm --filter @storyteller/web build
 ```
 
-Open the local URL printed by Vite (normally `http://localhost:5173`). The shell
-links to Projects and Media Library and retains the `web` tooling marker.
+Open the local URL printed by Vite (normally `http://localhost:5173`). The
+development server listens on all network interfaces and is also reachable at
+`http://<host-ip>:5173` from other devices if the firewall permits access. Use it
+only on trusted networks. The shell links to Projects and Media Library and
+retains the `web` tooling marker.
 Project pages call `/api/projects` on the web origin. Vite proxies `/api` to the
 backend (default `http://127.0.0.1:3000`) and removes that prefix; set
 `API_PROXY_TARGET` for another backend address. In Compose the web service

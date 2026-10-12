@@ -137,12 +137,13 @@ test("Vite serves and bundles the Vue shell and tooling probe", async () => {
   };
   const server = await createServer({
     ...config,
-    server: { host: "127.0.0.1", port: 0, strictPort: true },
+    server: { port: 0, strictPort: true },
   });
   try {
     await server.listen();
     const address = server.httpServer.address();
     expect(address && typeof address !== "string").toBeTruthy();
+    expect(["0.0.0.0", "::"]).toContain(address.address);
     const origin = `http://127.0.0.1:${address.port}`;
     const html = await fetch(origin);
     expect(html.status).toBe(200);

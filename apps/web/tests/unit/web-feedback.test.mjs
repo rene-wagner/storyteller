@@ -1,12 +1,12 @@
 import { createRequire } from "node:module";
 import { afterAll, beforeAll, beforeEach, expect, test } from "vitest";
-import { ApiError } from "../apps/web/src/api-client.ts";
-import { useFeedbackStore } from "../apps/web/src/feedback.ts";
-import { pinia } from "../apps/web/src/pinia.ts";
-import { queryClient } from "../apps/web/src/query-client.ts";
+import { ApiError } from "../../src/api-client.ts";
+import { useFeedbackStore } from "../../src/feedback.ts";
+import { pinia } from "../../src/pinia.ts";
+import { queryClient } from "../../src/query-client.ts";
 
 const requireFromWeb = createRequire(
-  new URL("../apps/web/package.json", import.meta.url),
+  new URL("../../package.json", import.meta.url),
 );
 const { createServer } = requireFromWeb("vite");
 const { createSSRApp, h } = requireFromWeb("vue");
@@ -15,7 +15,7 @@ let server;
 
 beforeAll(async () => {
   server = await createServer({
-    root: new URL("../apps/web/", import.meta.url).pathname,
+    root: new URL("../../", import.meta.url).pathname,
     server: { middlewareMode: true },
     appType: "custom",
   });

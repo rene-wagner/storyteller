@@ -9,7 +9,7 @@ import {
 } from "@lucide/vue";
 import { mount } from "@vue/test-utils";
 import { expect, test } from "vitest";
-import BaseButton from "./BaseButton.vue";
+import BaseButton from "../../../src/components/ui/BaseButton.vue";
 
 for (const [label, icon] of Object.entries({
   Add: Plus,

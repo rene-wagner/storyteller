@@ -1,9 +1,9 @@
 import { createRequire } from "node:module";
 import { afterAll, afterEach, beforeAll, expect, test, vi } from "vitest";
-import { ApiError, createApiClient } from "../apps/web/src/api-client.ts";
+import { ApiError, createApiClient } from "../../src/api-client.ts";
 
 const requireFromWeb = createRequire(
-  new URL("../apps/web/package.json", import.meta.url),
+  new URL("../../package.json", import.meta.url),
 );
 const { createServer } = requireFromWeb("vite");
 const { createSSRApp, h } = requireFromWeb("vue");
@@ -14,7 +14,7 @@ const originalFetch = globalThis.fetch;
 let server;
 beforeAll(async () => {
   server = await createServer({
-    root: new URL("../apps/web/", import.meta.url).pathname,
+    root: new URL("../../", import.meta.url).pathname,
     server: { middlewareMode: true },
     appType: "custom",
   });

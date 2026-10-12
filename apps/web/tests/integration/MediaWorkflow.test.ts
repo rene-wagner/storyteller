@@ -12,8 +12,8 @@ import { createPinia } from "pinia";
 import { nextTick } from "vue";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { afterEach, expect, test, vi } from "vitest";
-import App from "../App.vue";
-import { routes } from "../router";
+import App from "../../src/App.vue";
+import { routes } from "../../src/router";
 
 const projectId = "00000000-0000-4000-8000-000000000001";
 const characterId = "00000000-0000-4000-8000-000000000002";
@@ -320,7 +320,7 @@ test("blocked media deletion identifies the project, episode, scene and cue posi
       );
     }),
   );
-  const { default: MediaView } = await import("./MediaView.vue");
+  const { default: MediaView } = await import("../../src/views/MediaView.vue");
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -365,7 +365,10 @@ test("blocked media deletion identifies the project, episode, scene and cue posi
 
 test("upload music and assign it to a scene, then upload an effect and assign it to a cue point", async () => {
   const requests = mockMediaWorkflowApi();
-  await Promise.all([import("./MediaView.vue"), import("./ProjectView.vue")]);
+  await Promise.all([
+    import("../../src/views/MediaView.vue"),
+    import("../../src/views/ProjectView.vue"),
+  ]);
   const router = createRouter({ history: createMemoryHistory(), routes });
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },

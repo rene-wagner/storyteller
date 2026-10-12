@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import { ApiError } from "../apps/web/src/api-client.ts";
-import { queryClient } from "../apps/web/src/query-client.ts";
+import { ApiError } from "../../src/api-client.ts";
+import { queryClient } from "../../src/query-client.ts";
 
 test("query defaults cache briefly and avoid retrying client errors", () => {
   const { staleTime, retry } = queryClient.getDefaultOptions().queries;

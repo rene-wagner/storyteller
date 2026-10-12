@@ -1,9 +1,9 @@
 import { createRequire } from "node:module";
 import { expect, test } from "vitest";
-import { routes } from "../apps/web/src/router.ts";
+import { routes } from "../../src/router.ts";
 
 const requireFromWeb = createRequire(
-  new URL("../apps/web/package.json", import.meta.url),
+  new URL("../../package.json", import.meta.url),
 );
 const { createMemoryHistory, createRouter } = requireFromWeb("vue-router");
 const router = createRouter({ history: createMemoryHistory(), routes });

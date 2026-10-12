@@ -1,12 +1,12 @@
 import { mount } from "@vue/test-utils";
 import { h } from "vue";
 import { describe, expect, test } from "vitest";
-import CheckboxInput from "./CheckboxInput.vue";
-import FormField from "./FormField.vue";
-import SelectInput from "./SelectInput.vue";
-import TextareaInput from "./TextareaInput.vue";
-import TextInput from "./TextInput.vue";
-import ValidationMessage from "./ValidationMessage.vue";
+import CheckboxInput from "../../../src/components/ui/CheckboxInput.vue";
+import FormField from "../../../src/components/ui/FormField.vue";
+import SelectInput from "../../../src/components/ui/SelectInput.vue";
+import TextareaInput from "../../../src/components/ui/TextareaInput.vue";
+import TextInput from "../../../src/components/ui/TextInput.vue";
+import ValidationMessage from "../../../src/components/ui/ValidationMessage.vue";
 
 describe("FormField", () => {
   test("connects the label and hint to its input", () => {

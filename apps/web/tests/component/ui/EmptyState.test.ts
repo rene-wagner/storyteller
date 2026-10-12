@@ -1,7 +1,7 @@
 import { mount } from "@vue/test-utils";
 import { describe, expect, test } from "vitest";
-import EmptyState from "./EmptyState.vue";
-import ErrorState from "./ErrorState.vue";
+import EmptyState from "../../../src/components/ui/EmptyState.vue";
+import ErrorState from "../../../src/components/ui/ErrorState.vue";
 
 describe("empty states", () => {
   test("shows an empty message without an action when none is provided", () => {

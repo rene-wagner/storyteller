@@ -11,8 +11,8 @@ import { createPinia } from "pinia";
 import { nextTick } from "vue";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { afterEach, expect, test, vi } from "vitest";
-import App from "../App.vue";
-import { routes } from "../router";
+import App from "../../src/App.vue";
+import { routes } from "../../src/router";
 
 const projectId = "00000000-0000-4000-8000-000000000001";
 const characterId = "00000000-0000-4000-8000-000000000002";
@@ -177,7 +177,7 @@ afterEach(() => vi.unstubAllGlobals());
 test("create project, character, episode, scene and cue point through the routed UI", async () => {
   const requests = mockProjectApi();
   // Preload the lazy destination so Vite transformation does not delay the routed transition.
-  await import("./ProjectView.vue");
+  await import("../../src/views/ProjectView.vue");
   const router = createRouter({ history: createMemoryHistory(), routes });
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },

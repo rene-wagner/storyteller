@@ -277,10 +277,15 @@ their formatting exclusions.
 ## Tests
 
 Vitest replaces Node's built-in test runner. `pnpm test` runs the existing
-`tests/**/*.test.mjs` suite in Node and `apps/web/src/**/*.test.ts` in jsdom.
+`tests/**/*.test.mjs` and `apps/web/tests/**/*.test.mjs` suites in Node and
+`apps/web/tests/**/*.test.ts` in jsdom. Web app tests are grouped under
+`apps/web/tests/` by behavior: `component/` (including `component/ui/` for UI
+components and `component/ssr/` for Node-based server-rendered component tests),
+`integration/` for mocked workflows, `regression/`, `infrastructure/`, and
+`unit/` for Node-based module tests.
 Use `pnpm exec vitest` for watch mode or
-`pnpm exec vitest run apps/web/src/test-infrastructure.test.ts` for a specific
-frontend test file.
+`pnpm exec vitest run apps/web/tests/infrastructure/test-infrastructure.test.ts`
+for a specific frontend test file.
 Frontend tests can mount Vue single-file components with `@vue/test-utils` and
 use Vitest mocks for API behavior. Repository tests use Vitest's `expect`
 assertions (`toStrictEqual` for strict deep comparisons) and `onTestFinished`
@@ -300,7 +305,7 @@ without a database; its PostgreSQL-backed test checks persisted CRUD, list order
 timestamps and dependent-record cascades when `DATABASE_URL` is set and migrations
 are applied. `tests/projects-deletion-conflict.test.mjs` verifies that a cross-project
 cue-point reference prevents deletion without losing data. The Node-based
-`tests/web-projects.test.mjs` checks project form validation and frontend API
+`apps/web/tests/unit/web-projects.test.mjs` checks project form validation and frontend API
 requests; Vue component test infrastructure remains a future roadmap task.
 
 ## Workspace execution and Termux

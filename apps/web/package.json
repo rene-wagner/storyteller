@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "pnpm typecheck && vite build",
     "typecheck": "vue-tsc && tsc -p tsconfig.node.json",
-    "lint": "oxlint --deny-warnings src vite.config.mts vitest.config.mts"
+    "lint": "oxlint --deny-warnings src tests vite.config.mts vitest.config.mts"
   },
   "dependencies": {
     "@lucide/vue": "1.53.0",

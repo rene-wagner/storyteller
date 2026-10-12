@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { ApiError, createApiClient } from "../apps/web/src/api-client.ts";
+import { ApiError, createApiClient } from "../../src/api-client.ts";
 
 const originalFetch = globalThis.fetch;
 afterEach(() => {

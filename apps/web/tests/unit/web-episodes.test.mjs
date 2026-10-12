@@ -5,7 +5,7 @@ import {
   projectsApi,
   projectKeys,
   validateEpisode,
-} from "../apps/web/src/projects.ts";
+} from "../../src/projects.ts";
 
 const originalFetch = globalThis.fetch;
 afterEach(() => {

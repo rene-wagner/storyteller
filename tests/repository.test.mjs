@@ -105,12 +105,27 @@ test("workspace packages and root commands form a private monorepo", () => {
     );
     expect(appPackage.scripts.lint).toBe(
       app === "web"
-        ? "oxlint --deny-warnings src vite.config.mts vitest.config.mts"
+        ? "oxlint --deny-warnings src tests vite.config.mts vitest.config.mts"
         : "oxlint --deny-warnings src drizzle.config.ts",
     );
     expect(appPackage.scripts.typecheck).toBe(
       app === "web" ? "vue-tsc && tsc -p tsconfig.node.json" : "tsc",
     );
+  }
+});
+
+test("web TypeScript config checks tests alongside application source", () => {
+  const config = appConfig("web");
+  expect(config.options.rootDir).toBe(path.join(root, "apps/web"));
+  for (const file of [
+    "src/api-client.ts",
+    "tests/component/App.test.ts",
+    "tests/component/ui/FormField.test.ts",
+    "tests/integration/ProjectWorkflow.test.ts",
+    "tests/regression/ResponsiveActionLinks.test.ts",
+    "tests/infrastructure/test-infrastructure.test.ts",
+  ]) {
+    expect(config.fileNames).toContain(path.join(root, "apps/web", file));
   }
 });
 
@@ -228,6 +243,7 @@ test("Oxlint applies TypeScript rules to backend and Vue script setup", () => {
   const workspace = probeWorkspace();
   const sources = [
     ["apps/api/src/probe.ts", "export const probe: any = 1;"],
+    ["apps/web/tests/component/probe.test.ts", "export const probe: any = 1;"],
     [
       "apps/web/src/ProbeComponent.vue",
       '<script setup lang="ts">const probe: any = 1;</script><template><span>{{ probe }}</span></template>',
@@ -259,6 +275,11 @@ test("Oxlint rejects unused variables and unknown Node globals", () => {
   for (const [file, source, rule] of [
     ["apps/api/src/probe.ts", "const unused = 1;", "no-unused-vars"],
     ["tests/probe.mjs", "console.log(unknownGlobal);", "no-undef"],
+    [
+      "apps/web/tests/unit/probe.test.mjs",
+      "console.log(unknownGlobal);",
+      "no-undef",
+    ],
   ]) {
     workspace.write(file, source);
     const result = runTool("oxlint", ["--format=json", file], workspace.cwd);
@@ -269,8 +290,16 @@ test("Oxlint rejects unused variables and unknown Node globals", () => {
       ),
     ).toBeTruthy();
   }
-  workspace.write("tests/probe.mjs", "console.log(process.version);");
-  expect(runTool("oxlint", ["tests/probe.mjs"], workspace.cwd).status).toBe(0);
+  for (const file of [
+    "tests/probe.mjs",
+    "apps/web/tests/unit/probe.test.mjs",
+  ]) {
+    workspace.write(file, "console.log(process.version);");
+    expect(runTool("oxlint", [file], workspace.cwd).status).toBe(0);
+  }
+  const browserTest = "apps/web/tests/component/probe.test.ts";
+  workspace.write(browserTest, "export const probe = window.document.title;");
+  expect(runTool("oxlint", [browserTest], workspace.cwd).status).toBe(0);
 });
 
 test("Oxlint rejects invalid Vue script setup exports", () => {

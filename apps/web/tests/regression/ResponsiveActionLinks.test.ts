@@ -2,9 +2,9 @@ import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { mount } from "@vue/test-utils";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { expect, test } from "vitest";
-import { projectKeys } from "../projects";
-import HomeView from "./HomeView.vue";
-import ProjectsView from "./ProjectsView.vue";
+import { projectKeys } from "../../src/projects";
+import HomeView from "../../src/views/HomeView.vue";
+import ProjectsView from "../../src/views/ProjectsView.vue";
 
 for (const [name, view, labels] of [
   ["home", HomeView, ["Projects", "Media Library"]],

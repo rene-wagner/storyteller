@@ -1,7 +1,7 @@
 import { mount } from "@vue/test-utils";
 import { defineComponent, h, nextTick, ref } from "vue";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import ConfirmationDialog from "./ConfirmationDialog.vue";
+import ConfirmationDialog from "../../../src/components/ui/ConfirmationDialog.vue";
 
 // jsdom does not implement the native dialog methods; preserve their open/close effect.
 const originalShowModal = Object.getOwnPropertyDescriptor(

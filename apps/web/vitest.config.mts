@@ -6,6 +6,6 @@ export default defineConfig({
   test: {
     name: "web",
     environment: "jsdom",
-    include: ["src/**/*.test.ts"],
+    include: ["tests/**/*.test.ts"],
   },
 });

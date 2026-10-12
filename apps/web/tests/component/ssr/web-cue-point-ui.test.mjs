@@ -2,7 +2,7 @@ import { createRequire } from "node:module";
 import { afterAll, beforeAll, expect, test } from "vitest";
 
 const requireFromWeb = createRequire(
-  new URL("../apps/web/package.json", import.meta.url),
+  new URL("../../../package.json", import.meta.url),
 );
 const { createServer } = requireFromWeb("vite");
 const { createSSRApp, h } = requireFromWeb("vue");
@@ -11,7 +11,7 @@ const { QueryClient, VueQueryPlugin } = requireFromWeb("@tanstack/vue-query");
 let server;
 beforeAll(async () => {
   server = await createServer({
-    root: new URL("../apps/web/", import.meta.url).pathname,
+    root: new URL("../../../", import.meta.url).pathname,
     server: { middlewareMode: true },
     appType: "custom",
   });

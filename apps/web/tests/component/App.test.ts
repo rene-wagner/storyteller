@@ -2,8 +2,8 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { createPinia } from "pinia";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { afterEach, expect, test, vi } from "vitest";
-import App from "./App.vue";
-import { useSidebarStore } from "./sidebar";
+import App from "../../src/App.vue";
+import { useSidebarStore } from "../../src/sidebar";
 
 const mounted: Array<ReturnType<typeof mount>> = [];
 afterEach(() => {

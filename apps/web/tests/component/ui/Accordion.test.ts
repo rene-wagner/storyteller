@@ -1,10 +1,10 @@
 import { mount } from "@vue/test-utils";
 import { h } from "vue";
 import { expect, test } from "vitest";
-import Accordion from "./Accordion.vue";
-import AccordionContent from "./AccordionContent.vue";
-import AccordionHeader from "./AccordionHeader.vue";
-import AccordionItem from "./AccordionItem.vue";
+import Accordion from "../../../src/components/ui/Accordion.vue";
+import AccordionContent from "../../../src/components/ui/AccordionContent.vue";
+import AccordionHeader from "../../../src/components/ui/AccordionHeader.vue";
+import AccordionItem from "../../../src/components/ui/AccordionItem.vue";
 
 test("accordion summaries toggle their own content", async () => {
   const wrapper = mount(Accordion, {

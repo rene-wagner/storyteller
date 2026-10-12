@@ -37,7 +37,7 @@
       }
     },
     {
-      "files": ["apps/web/src/**/*.{ts,vue}"],
+      "files": ["apps/web/src/**/*.{ts,vue}", "apps/web/tests/**/*.ts"],
       "env": {
         "browser": true
       }

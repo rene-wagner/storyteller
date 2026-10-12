@@ -4,8 +4,8 @@ import {
   projectKeys,
   validateProject,
   projectError,
-} from "../apps/web/src/projects.ts";
-import { ApiError } from "../apps/web/src/api-client.ts";
+} from "../../src/projects.ts";
+import { ApiError } from "../../src/api-client.ts";
 
 const originalFetch = globalThis.fetch;
 afterEach(() => {

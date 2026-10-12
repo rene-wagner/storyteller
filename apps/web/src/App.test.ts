@@ -33,6 +33,21 @@ async function setup() {
   return { wrapper, router, sidebar: useSidebarStore(pinia) };
 }
 
+test("shared layout has no tooling output or empty footer on any route", async () => {
+  const { wrapper, router } = await setup();
+  for (const [path, content] of [
+    ["/", "Home view"],
+    ["/projects", "Projects view"],
+    ["/media", "Media view"],
+  ]) {
+    await router.push(path);
+    await flushPromises();
+    expect(wrapper.get("main").text()).toBe(content);
+    expect(wrapper.text()).not.toContain("Tooling check:");
+    expect(wrapper.find("footer").exists()).toBe(false);
+  }
+});
+
 test("mobile menu opens, traps focus and closes with Escape", async () => {
   const { wrapper, sidebar } = await setup();
   const menu = wrapper.get('button[aria-controls="app-sidebar"]');

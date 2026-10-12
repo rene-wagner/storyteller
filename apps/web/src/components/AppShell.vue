@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { RouterView } from "vue-router";
-import ToolingCheck from "../ToolingCheck.vue";
 import { useSidebarStore } from "../sidebar";
 import AppHeader from "./AppHeader.vue";
 import AppSidebar from "./AppSidebar.vue";
@@ -82,9 +81,6 @@ onUnmounted(() => {
         <main class="mx-auto max-w-5xl px-6 py-10">
           <RouterView />
         </main>
-        <footer class="mx-auto max-w-5xl px-6 pb-8 text-sm text-gray-600">
-          Tooling check: <ToolingCheck />
-        </footer>
       </div>
     </div>
   </div>

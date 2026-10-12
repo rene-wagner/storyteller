@@ -121,7 +121,7 @@ test("Docker builds API workspace dependencies before the API", () => {
   );
 });
 
-test("Vite serves and bundles the Vue shell and tooling probe", async () => {
+test("Vite serves and bundles the Vue shell", async () => {
   const webRoot = path.join(root, "apps/web");
   const pkg = readJson("apps/web/package.json");
   expect(pkg.scripts.dev).toBe("vite");
@@ -156,12 +156,9 @@ test("Vite serves and bundles the Vue shell and tooling probe", async () => {
     expect(await shell.text()).toMatch(/AppShell\.vue/);
     const appShell = await fetch(`${origin}/src/components/AppShell.vue`);
     expect(appShell.status).toBe(200);
-    expect(await appShell.text()).toMatch(/ToolingCheck\.vue/);
-    const component = await fetch(`${origin}/src/ToolingCheck.vue`);
-    expect(component.status).toBe(200);
-    const componentCode = await component.text();
-    expect(componentCode).toMatch(/toolingCheck/);
-    expect(componentCode).toMatch(/render/);
+    const appShellCode = await appShell.text();
+    expect(appShellCode).toMatch(/RouterView/);
+    expect(appShellCode).toMatch(/render/);
   } finally {
     await server.close();
   }
@@ -171,9 +168,7 @@ test("Vite serves and bundles the Vue shell and tooling probe", async () => {
     result.output.some((file) => file.fileName === "index.html"),
   ).toBeTruthy();
   expect(
-    result.output.some(
-      (file) => file.type === "chunk" && file.isEntry && /web/.test(file.code),
-    ),
+    result.output.some((file) => file.type === "chunk" && file.isEntry),
   ).toBeTruthy();
 });
 

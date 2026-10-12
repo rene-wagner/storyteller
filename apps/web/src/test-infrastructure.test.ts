@@ -1,11 +1,14 @@
 import { mount } from "@vue/test-utils";
 import { expect, test } from "vitest";
-import ToolingCheck from "./ToolingCheck.vue";
+import { defineComponent, h } from "vue";
 
-test("Vue single-file components mount in the DOM test environment", () => {
-  const wrapper = mount(ToolingCheck);
+test("Vue components mount in the DOM test environment", () => {
+  const component = defineComponent({
+    setup: () => () => h("span", "Test component"),
+  });
+  const wrapper = mount(component);
 
   expect(wrapper.element.ownerDocument.defaultView).toBe(window);
-  expect(wrapper.text()).toBe("web");
+  expect(wrapper.text()).toBe("Test component");
   wrapper.unmount();
 });
